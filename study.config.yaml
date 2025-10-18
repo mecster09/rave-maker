@@ -1,0 +1,62 @@
+study:
+  id: "study-01"
+  name: "Hypertension Simulation"
+  description: "Realistic RAVE mock study"
+
+structure:
+  sites: 3
+  subjects_per_site: 10
+  forms:
+    - name: "Demographics"
+    - name: "Vitals"
+    - name: "Labs"
+    - name: "AE"
+
+visits:
+  - name: "Screening"
+    day: 1
+    forms: ["Demographics", "Vitals"]
+    probability: 1.0
+    simulate_missed: true
+    simulate_delayed: true
+    max_delay_days: 3
+    partial_forms: true
+    missing_field_probability: 0.2
+
+  - name: "Baseline"
+    day: 14
+    forms: ["Vitals", "Labs"]
+    probability: 0.9
+    simulate_missed: true
+    simulate_delayed: true
+    max_delay_days: 7
+    partial_forms: true
+    missing_field_probability: 0.15
+
+  - name: "Follow-Up"
+    day: 60
+    forms: ["Vitals", "Labs", "AE"]
+    probability: 0.85
+    simulate_missed: true
+    simulate_delayed: true
+    max_delay_days: 10
+    partial_forms: false
+
+simulation:
+  mode: "accelerated"
+  time_acceleration: 60
+  update_interval_sec: 5
+  update_batch_pct: 10
+  start_delay_sec: 2
+  end_behavior: "loop"
+
+queries:
+  enabled: true
+  missing_data_probability: 0.05
+  out_of_range_probability: 0.02
+
+output:
+  log_level: "info"
+  persist_data: false
+  emit_events: true
+  event_target: "console"
