@@ -7,8 +7,8 @@ describe('Generator determinism (unit)', () => {
     const simB = new Simulator();
     await simB.initialize('study.config.yaml');
 
-    await simA['generator']?.simulateVisits(10, 60);
-    await simB['generator']?.simulateVisits(10, 60);
+    await simA.tick();
+    await simB.tick();
 
     const formsA = await simA.getStorage().getForms(simA.getStudyId());
     const formsB = await simB.getStorage().getForms(simB.getStudyId());

@@ -22,8 +22,8 @@ export function buildServer(sim?: Simulator) {
     res.json(data ?? []);
   });
 
-  // Control endpoint (basic stub; tests can call to ensure server is up)
   app.post('/api/control/tick', async (_req, res) => {
+    await sim?.tick();
     res.json({ status: 'advanced' });
   });
 

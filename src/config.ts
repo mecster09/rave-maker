@@ -59,7 +59,7 @@ function validate(cfg: SimulatorConfig): void {
   }
 }
 
-export function loadConfig(path = "study.config.yaml"): SimulatorConfig {
+export function loadConfig(path = "study.config.yaml") {
   const raw = fs.readFileSync(path, "utf8");
   const loaded = yaml.load(raw);
   if (!loaded || typeof loaded !== "object") throw new Error("Configuration file is empty or invalid");

@@ -26,13 +26,10 @@ export class Simulator {
     await this.generator.seedOnce();
   }
 
-  start() {
+  async tick() {
     if (!this.generator) throw new Error("Simulator not initialized");
     const cfg = this.study.config.study;
-    setTimeout(() =>
-      this.generator!.simulateVisits(cfg.batch_percentage, cfg.speed_factor),
-      this.study.config.study.interval_ms
-    );
+    await this.generator.simulateVisits(cfg.batch_percentage, cfg.speed_factor);
   }
 
   getStorage() { return this.storage; }

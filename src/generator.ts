@@ -6,7 +6,6 @@ import { faker } from '@faker-js/faker';
 import { SeededRNG } from './utils/seededRandom';
 
 export class Generator {
-  private intervalId?: NodeJS.Timeout;
   private rng: SeededRNG;
 
   constructor(private storage: Storage, private study: Study, private visits: Visit[]) {
@@ -71,16 +70,6 @@ export class Generator {
       }
     }
     return data;
-  }
-
-  start(intervalMs = 10000, batchPct = 5, timeAccel = 1) {
-    if (this.intervalId) return;
-    this.intervalId = setInterval(() => this.simulateVisits(batchPct, timeAccel), intervalMs);
-  }
-
-  stop() {
-    if (this.intervalId) clearInterval(this.intervalId);
-    this.intervalId = undefined;
   }
 
   /** One simulation tick, deterministic via SeededRNG */

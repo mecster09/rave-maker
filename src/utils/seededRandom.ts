@@ -14,13 +14,7 @@ export class SeededRNG {
     this.rnd = mulberry32(seed);
   }
   next() { return this.rnd(); }
-  int(min: number, max: number) { // inclusive
-    return Math.floor(this.next() * (max - min + 1)) + min;
-  }
-  pick<T>(arr: T[]): T {
-    return arr[Math.floor(this.next() * arr.length)];
-  }
-  chance(p: number) { // p in [0,1]
-    return this.next() < p;
-  }
+  int(min: number, max: number) { return Math.floor(this.next() * (max - min + 1)) + min; }
+  pick<T>(arr: T[]): T { return arr[Math.floor(this.next() * arr.length)]; }
+  chance(p: number) { return this.next() < p; }
 }
