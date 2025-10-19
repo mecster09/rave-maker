@@ -1,144 +1,182 @@
-# 🧪 Medidata RAVE Mock Study Simulator
+# 🧪 Medidata RAVE Study Simulator (V3)
 
-A **TypeScript-based mock API** that simulates a live Medidata RAVE clinical study.  
-This simulator generates **realistic study data** — including sites, subjects, visits, forms, and queries — and exposes them via a configurable REST API.
+A **TypeScript-based mock API** that simulates live **Medidata RAVE clinical studies** — complete with subjects, sites, forms, visits, queries, and realistic study dynamics.
 
-It is designed for **testing integrations, analytics pipelines, and downstream systems** that depend on RAVE data streams without needing access to an actual clinical environment.
+This version implements **TDD-first development**, **deterministic simulation**, and **automated Jest tests** (unit and API) as specified in **Spec-Kit V3**.
 
 ---
 
 ## 🚀 Features
 
-- **Configurable Study Setup**  
-  Define number of sites, subjects per site, visits (with forms), and simulation behavior in YAML.
+- **Config-driven simulation**  
+  All study parameters (sites, visits, probabilities, query behavior) are defined via YAML.
 
-- **Dynamic Data Simulation**  
-  Simulates live clinical trial data:
-  - Subject creation and randomization  
-  - Visit scheduling (planned, missed, delayed)  
-  - Form data entry (full or partial forms)  
-  - Query creation (missing data or out-of-range values)
+- **Deterministic behavior (seeded RNG)**  
+  Identical seed + config always yields the same study progression.
 
-- **Configurable Simulation Speed**  
-  Control how fast new data appears in “study time” vs real time.
+- **Express API**  
+  Mock RAVE endpoints for subjects, forms, queries, and simulation control.
 
-- **Multi-Study Simulation**  
-  Run multiple independent study simulations side-by-side.
+- **Realistic study behavior**  
+  Missed/delayed visits, partial forms, and probabilistic query generation.
 
-- **REST API Endpoints**  
-  Exposes sites, subjects, visits, forms, and queries over HTTP (mock RAVE API).
+- **Full Jest test coverage (unit + API)**  
+  Automated via `ts-jest` and `supertest`.
 
 ---
 
-## 🏗️ Project Structure
+## 📂 Project Structure
 
 ```
-src/
- ├─ config.ts          # Loads and validates YAML configuration
- ├─ simulator.ts       # Main simulation engine
- ├─ generator.ts       # Generates visits, forms, and queries
- ├─ models.ts          # Type definitions for Study, Site, Subject, Visit, etc.
- ├─ storage/           # Pluggable storage backends (in-memory, file, DB)
- ├─ server.ts          # Express.js API server
- ├─ utils/             # Random data helpers
- ├─ study.config.yaml  # Example study configuration
+rave-simulator/
+├── src/
+│   ├── config.ts                 # YAML config loader + schema validation
+│   ├── generator.ts              # Data generation engine
+│   ├── simulator.ts              # Study orchestrator
+│   ├── server.ts                 # Express REST API
+│   ├── models.ts                 # Shared model definitions
+│   ├── storage/                  # In-memory data store
+│   └── utils/                    # Seeded RNG, helpers
+│
+├── study.config.yaml             # Example study configuration
+│
+├── tests/
+│   ├── unit/                     # Unit tests (Jest)
+│   │   ├── configLoader.test.ts
+│   │   └── generator.test.ts
+│   ├── api/                      # API integration tests (Supertest)
+│   │   ├── health.test.ts
+│   │   └── endpoints.test.ts
+│   └── helpers/
+│       └── setupApp.ts           # Utility to bootstrap simulator for tests
+│
+├── jest.config.cjs               # Jest + ts-jest configuration
+├── tsconfig.json                 # TypeScript compiler config
+├── package.json                  # NPM project definition
+└── README.md                     # This file
 ```
 
 ---
 
-## ⚙️ Configuration (YAML)
+## ⚙️ Configuration
 
-The simulator is configured via `study.config.yaml`:
+Study behavior is controlled via `study.config.yaml`.
+
+Example excerpt:
 
 ```yaml
 study:
-  id: "study-001"
-  name: "Hypertension Study"
-  speed_factor: 2
-  interval_ms: 10000
+  id: "study-01"
+  name: "Hypertension Simulation"
+  seed: 42
+  speed_factor: 60
+  interval_ms: 5000
   batch_percentage: 10
 
 structure:
-  sites: 5
-  subjects_per_site: 20
+  sites: 2
+  subjects_per_site: 5
 
 visits:
-  - name: "Screening"
-    day: 0
-    forms: ["Demographics", "Vitals"]
-    probability: 1.0
-    simulate_missed: false
-    simulate_delayed: false
-    partial_forms: false
-
-  - name: "Week 4"
-    day: 28
-    forms: ["Vitals", "Lab Results"]
-    probability: 0.85
+  - name: "Baseline"
+    day: 14
+    forms: ["Vitals", "Labs"]
+    probability: 0.9
     simulate_missed: true
     simulate_delayed: true
     max_delay_days: 7
     partial_forms: true
-    missing_field_probability: 0.25
-
-queries:
-  enabled: true
-  missing_data_probability: 0.05
-  out_of_range_probability: 0.03
+    missing_field_probability: 0.2
 ```
 
 ---
 
-## 🧩 API Endpoints
-
-| Endpoint | Method | Description |
-|-----------|--------|-------------|
-| `/api/studies` | GET | List active simulated studies |
-| `/api/sites` | GET | Get all sites |
-| `/api/subjects` | GET | Get all subjects |
-| `/api/forms` | GET | Get form data |
-| `/api/queries` | GET | Get open queries |
-
----
-
-## 🛠️ Installation & Setup
+## 🧰 Installation
 
 ```bash
-git clone https://github.com/your-org/medidata-rave-simulator.git
-cd medidata-rave-simulator
+# Clone or unzip the project
+cd rave-simulator
+
+# Install dependencies
 npm install
-npx ts-node src/server.ts
 ```
 
 ---
 
-## 🧬 Running Multiple Studies
+## 🧪 Running Tests
+
+All tests use **Jest** with **ts-jest** for TypeScript and **Supertest** for API routes.
+
+### Run all tests
+```bash
+npm test
+```
+
+### Run unit tests only
+```bash
+npm run test:unit
+```
+
+### Run API (integration) tests only
+```bash
+npm run test:api
+```
+
+### Test coverage report
+```bash
+npm test -- --coverage
+```
+
+Coverage thresholds are enforced globally:
+- **Lines:** ≥ 80%  
+- **Branches:** ≥ 80%
+
+---
+
+## 🧩 Running the Simulator
+
+You can start the simulator directly:
 
 ```bash
-npx ts-node src/server.ts --config study1.config.yaml --port 3000
-npx ts-node src/server.ts --config study2.config.yaml --port 3001
+npm run dev
 ```
+
+Then open your browser or use `curl`:
+
+```bash
+curl http://localhost:3000/health
+```
+
+Example endpoints:
+- `GET /api/studies/:id/subjects`
+- `GET /api/studies/:id/forms`
+- `GET /api/studies/:id/queries`
+- `POST /api/control/tick` → advances simulation 1 tick
 
 ---
 
-## ☁️ Running in Azure
+## 🧠 Design Highlights
 
-1. Create a Dockerfile:
-
-```dockerfile
-FROM node:20-alpine
-WORKDIR /app
-COPY package*.json ./
-RUN npm install
-COPY . .
-CMD ["npm", "run", "start"]
-```
-
-2. Deploy multiple containers with different configs and ports.
+- **Test-Driven Development (TDD)**  
+  Tests define behavior before code is written.
+- **Spec Alignment**  
+  Fully compliant with **Spec-Kit V3** (`principles.spec.yaml`, `implementation-plan.spec.yaml`, etc.)
+- **Deterministic Testing**  
+  Uses a custom `SeededRNG` to ensure repeatable data generation.
+- **Separation of Concerns**  
+  Config loader, generator, storage, and API layers tested independently.
 
 ---
 
 ## 🧾 License
 
-MIT License © 2025 — Designed for simulation and testing purposes only.  
-Not affiliated with Medidata or Dassault Systèmes.
+MIT License © 2025  
+Developed for Medidata RAVE simulation, research, and training scenarios.
+
+---
+
+## 🧭 Next Steps
+
+- Add database-backed storage adapter (for persistent simulations)
+- Extend API coverage (query endpoints, pagination)
+- Add load-testing and performance benchmarking suite
