@@ -1,85 +1,121 @@
 meta:
   id: rave-simulator-api
-  title: RAVE Simulator REST API
-  version: 1.0.0
+  title: RAVE Simulator REST API (V3 - Contract Tests)
+  version: 3.0.0
   description: |
-    REST API specification for interacting with the simulated RAVE study data.
-    Provides read-only access to simulated studies, sites, subjects, forms, and queries.
+    REST API with examples, error handling, and control endpoints to enable contract testing.
 
 servers:
   - url: http://localhost:3000
-    description: Local development server
+    description: Local simulator
 
 endpoints:
-  /api/studies:
+  /health:
     get:
-      summary: List all simulated studies
-      response:
+      summary: Health check
+      responses:
         200:
-          type: array
-          items: Study
+          schema:
+            type: object
+            properties: { status: { type: string, enum: ["ok"] } }
+            required: [status]
+          examples:
+            success: { status: "ok" }
 
-  /api/sites:
+  /api/studies/{studyId}/subjects:
     get:
-      summary: List all sites
-      response:
+      summary: List subjects for a study
+      params:
+        - name: studyId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
         200:
-          type: array
-          items: Site
+          schema:
+            type: array
+            items: { $ref: "#/models/Subject" }
+          examples:
+            empty: []
+        400:
+          schema: { $ref: "#/models/Error" }
 
-  /api/subjects:
+  /api/studies/{studyId}/forms:
     get:
-      summary: List all subjects
-      response:
+      summary: List forms for a study (optional subject filter)
+      params:
+        - { name: studyId, in: path, required: true, schema: { type: string } }
+        - { name: subjectId, in: query, required: false, schema: { type: string } }
+      responses:
         200:
-          type: array
-          items: Subject
+          schema:
+            type: array
+            items: { $ref: "#/models/FormRecord" }
+        400:
+          schema: { $ref: "#/models/Error" }
 
-  /api/forms:
+  /api/studies/{studyId}/queries:
     get:
-      summary: List all form data records
-      response:
+      summary: List queries for a study
+      params:
+        - { name: studyId, in: path, required: true, schema: { type: string } }
+      responses:
         200:
-          type: array
-          items: FormRecord
+          schema:
+            type: array
+            items: { $ref: "#/models/Query" }
+        400:
+          schema: { $ref: "#/models/Error" }
 
-  /api/queries:
-    get:
-      summary: List all simulated data queries
-      response:
+  /api/control/tick:
+    post:
+      summary: Advance simulation one tick (for test steering)
+      responses:
         200:
-          type: array
-          items: Query
+          schema:
+            type: object
+            properties: { status: { type: string } }
+            required: [status]
+          examples:
+            ok: { status: "advanced" }
 
 models:
-  Study:
-    id: string
-    name: string
-    description?: string
-  Site:
-    id: string
-    studyId: string
-    code: string
-    name: string
+  Error:
+    type: object
+    properties:
+      message: { type: string }
+    required: [message]
+
   Subject:
-    id: string
-    studyId: string
-    siteId: string
-    subjectCode: string
+    type: object
+    properties:
+      id: { type: string }
+      studyId: { type: string }
+      siteId: { type: string }
+      subjectCode: { type: string }
+    required: [id, studyId, siteId, subjectCode]
+
   FormRecord:
-    id: string
-    studyId: string
-    subjectId: string
-    siteId: string
-    name: string
-    data: object
-    lastUpdated: string
+    type: object
+    properties:
+      id: { type: string }
+      studyId: { type: string }
+      subjectId: { type: string }
+      siteId: { type: string }
+      name: { type: string }
+      data: { type: object, additionalProperties: true }
+      lastUpdated: { type: string }
+    required: [id, studyId, subjectId, siteId, name, data, lastUpdated]
+
   Query:
-    id: string
-    studyId: string
-    formId: string
-    field: string
-    type: string
-    status: string
-    text: string
-    createdAt: string
+    type: object
+    properties:
+      id: { type: string }
+      studyId: { type: string }
+      formId: { type: string }
+      field: { type: string }
+      type: { type: string, enum: ["MissingData", "OutOfRange", "Inconsistency"] }
+      status: { type: string, enum: ["Open", "Answered", "Closed"] }
+      text: { type: string }
+      createdAt: { type: string }
+    required: [id, studyId, formId, field, type, status, text, createdAt]

@@ -13,61 +13,57 @@ export interface VisitConfig {
   missing_field_probability?: number;
 }
 
-export interface FormConfig {
-  name: string;
-  update_probability?: number;
-  fields?: any[];
-}
-
 export interface QueryConfig {
   enabled: boolean;
-  missing_data_probability?: number;
-  out_of_range_probability?: number;
+  missing_data_probability: number;
+  out_of_range_probability: number;
 }
 
 export interface SimulatorConfig {
   study: {
     id: string;
     name: string;
-    description?: string;
     seed?: number;
+    speed_factor: number;
+    interval_ms: number;
+    batch_percentage: number;
   };
   structure: {
     sites: number;
     subjects_per_site: number;
-    forms: FormConfig[];
   };
   visits: VisitConfig[];
-  simulation: {
-    mode: "realtime" | "accelerated";
-    time_acceleration: number;
-    update_interval_sec: number;
-    update_batch_pct: number;
-    start_delay_sec?: number;
-    end_behavior?: "loop" | "stop";
-  };
-  queries?: QueryConfig;
-  output: {
-    log_level: "info" | "debug" | "warn" | "error";
-    persist_data: boolean;
-    emit_events: boolean;
-    event_target: string;
-  };
+  queries: QueryConfig;
+}
+
+function assert(condition: any, message: string): asserts condition {
+  if (!condition) throw new Error(message);
+}
+
+function validate(cfg: SimulatorConfig): void {
+  assert(cfg.study != null, "study section is required");
+  assert(cfg.structure != null, "structure section is required");
+  assert(Array.isArray(cfg.visits), "visits must be an array");
+
+  const b = cfg.study.batch_percentage;
+  assert(b >= 0 && b <= 100, "batch_percentage must be within 0..100");
+
+  for (const v of cfg.visits) {
+    assert(v.probability >= 0 && v.probability <= 1, `visit ${v.name} probability must be within 0..1`);
+    if (v.simulate_delayed) {
+      assert(typeof v.max_delay_days === "number" && v.max_delay_days >= 0, `visit ${v.name} max_delay_days required and >=0 when simulate_delayed=true`);
+    }
+    if (v.missing_field_probability != null) {
+      assert(v.missing_field_probability >= 0 && v.missing_field_probability <= 1, `visit ${v.name} missing_field_probability must be within 0..1`);
+    }
+  }
 }
 
 export function loadConfig(path = "study.config.yaml"): SimulatorConfig {
   const raw = fs.readFileSync(path, "utf8");
   const loaded = yaml.load(raw);
-
-  if (!loaded || typeof loaded !== "object") {
-    throw new Error("Configuration file is empty or invalid");
-  }
-
+  if (!loaded || typeof loaded !== "object") throw new Error("Configuration file is empty or invalid");
   const data = loaded as SimulatorConfig;
-
-  if (!data.visits || !Array.isArray(data.visits)) {
-    throw new Error("Configuration error: 'visits' must be defined as an array in the config file");
-  }
-
+  validate(data);
   return data;
 }

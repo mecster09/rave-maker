@@ -5,20 +5,29 @@ export function buildServer(sim?: Simulator) {
   const app = express();
   app.use(express.json());
 
-  app.get('/api/studies/:id/subjects', async (req,res)=>{
-    const subjects = await sim?.getStorage().getSubjects(req.params.id);
-    res.json(subjects || []);
+  app.get('/health', (_req, res) => res.json({ status: 'ok' }));
+
+  app.get('/api/studies/:id/subjects', async (req, res) => {
+    const data = await sim?.getStorage().getSubjects(req.params.id);
+    res.json(data ?? []);
   });
 
-  app.get('/api/studies/:id/forms', async (req,res)=>{
-    const forms = await sim?.getStorage().getForms(req.params.id);
-    res.json(forms || []);
+  app.get('/api/studies/:id/forms', async (req, res) => {
+    const data = await sim?.getStorage().getForms(req.params.id, req.query.subjectId as string | undefined);
+    res.json(data ?? []);
   });
 
-  app.get('/api/studies/:id/queries', async (req,res)=>{
-    const queries = await sim?.getStorage().getQueries(req.params.id);
-    res.json(queries || []);
+  app.get('/api/studies/:id/queries', async (req, res) => {
+    const data = await sim?.getStorage().getQueries(req.params.id);
+    res.json(data ?? []);
+  });
+
+  // Control endpoint (basic stub; tests can call to ensure server is up)
+  app.post('/api/control/tick', async (_req, res) => {
+    res.json({ status: 'advanced' });
   });
 
   return app;
 }
+
+export default buildServer;

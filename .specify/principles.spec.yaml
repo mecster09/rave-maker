@@ -1,54 +1,58 @@
 meta:
   id: rave-principles
-  title: Engineering & Architectural Principles (V2)
-  version: 2.0.0
+  title: Engineering & Architectural Principles (V3)
+  version: 3.0.0
   description: |
-    Defines guiding principles for the Medidata RAVE Mock Study Simulator project with priorities and enforcement levels.
+    Guiding principles for the Medidata RAVE Mock Study Simulator with TDD-first,
+    CI enforcement, determinism, and maintainability requirements.
 
 principles:
+  - id: tdd
+    priority: critical
+    enforcement: "Jest unit tests and Supertest API tests required for every change; PRs blocked without tests."
+    title: Test Driven Development
+    description: |
+      Tests are authored before and alongside implementation. Acceptance criteria are expressed
+      as executable API and unit tests. Features are considered done only when tests pass.
+
+  - id: continuous-integration
+    priority: critical
+    enforcement: "CI must run lint, type-check, build, and tests on each PR and push; failures block merges."
+    title: Continuous Integration
+    description: |
+      CI serves as a quality gate. Build, type, and test failures prevent merge. Code owners review is required.
+
+  - id: deterministic-simulation
+    priority: high
+    enforcement: "Randomness must be seedable; same seed + config -> reproducible sequences for tests."
+    title: Deterministic Simulation
+    description: |
+      All random generation must accept a seed (from config or env). Deterministic outputs enable reliable tests.
+
+  - id: coverage
+    priority: high
+    enforcement: "Global coverage thresholds enforced in CI (lines >= 80%, branches >= 80%)."
+    title: Coverage Targets
+    description: |
+      Coverage thresholds prevent untested code from shipping. Critical paths strive for >90%.
+
   - id: modular-architecture
     priority: high
-    enforcement: "Code structure, CI tests"
-    title: Modular and Extensible
+    enforcement: "Separation of concerns (config/simulation/api/storage); modules unit-testable in isolation."
+    title: Modular & Extensible
     description: |
-      The simulator is decomposed into independent modules (API, simulation, configuration)
-      to allow concurrent studies and separate scaling in Azure.
+      Decouple components to scale teams and tests. Favor interfaces for storage and generators.
 
   - id: configuration-first
     priority: high
-    enforcement: "Schema validation, CI tests"
+    enforcement: "No hard-coded behavior; configuration validated against schema; invalid configs fail fast."
     title: Configuration Driven
     description: |
-      Every simulation parameter must be defined via a YAML config file to ensure reproducibility,
-      easy tweaking, and transparent version control.
-
-  - id: realism
-    priority: high
-    enforcement: "Test coverage for visit patterns"
-    title: Realistic Study Behavior
-    description: |
-      Simulations must mimic real-world clinical trial patterns, including delayed visits,
-      missed visits, partial forms, and realistic query rates.
+      YAML config is the single source of study behavior. Validation is compulsory on startup and in tests.
 
   - id: observability
     priority: medium
-    enforcement: "Logging required"
-    title: Observability and Monitoring
+    enforcement: "Structured logging at INFO; error logs with context; basic metrics exposed for verification."
+    title: Observability
     description: |
-      Simulation activity should be logged and measurable for performance testing, using metrics
-      such as data generation rate and subject progression.
-
-  - id: cloud-ready
-    priority: high
-    enforcement: "Docker containerization"
-    title: Cloud Native
-    description: |
-      Must run as a stateless Node.js/TypeScript service deployable to Azure Container Apps or AKS.
-
-  - id: maintainable
-    priority: high
-    enforcement: "Linting, tests, code reviews"
-    title: Maintainable Codebase
-    description: |
-      Follows TypeScript strict mode, linting, and TDD principles with Jest for testing and
-      automated CI/CD pipeline integration.
+      Logs and metrics support debugging and performance characterization (e.g., update rates).

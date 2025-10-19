@@ -1,53 +1,91 @@
 meta:
   id: rave-implementation-plan
-  title: Implementation Plan
-  version: 1.0.0
+  title: Implementation Plan (V3 - TDD First)
+  version: 3.0.0
   description: |
-    Phased roadmap for the design, implementation, and deployment of the RAVE Mock Study Simulator.
+    Phased plan with tests-first sequencing. Each phase has exit criteria tied to passing tests and coverage.
 
 phases:
-  - id: phase1-core
-    title: Phase 1 — Core Simulation Engine
+  - id: phase0-testing-foundation
+    title: Phase 0 — Testing Foundation (TDD/CI Gate)
     objectives:
-      - Build simulation engine for sites, subjects, and visits.
-      - Implement YAML-based configuration loader.
-      - Add realistic data generation via faker.
+      - Establish Jest + ts-jest + Supertest
+      - Add coverage thresholds (>=80%)
+      - Add GitHub Actions CI workflow (lint/build/test)
+      - Provide example unit and API tests and fixtures
     deliverables:
-      - simulator.ts
-      - generator.ts
-      - config.ts
-      - study.config.yaml
-    timeline: 2 weeks
+      - jest.config.js
+      - tests/unit/sample.test.ts
+      - tests/api/health.test.ts
+      - .github/workflows/ci.yml
+    exit_criteria:
+      - CI green on sample tests
+      - Coverage threshold enforced
+    dependencies: []
+    skills: [TypeScript, Jest, Supertest, GitHub Actions]
 
-  - id: phase2-api
-    title: Phase 2 — REST API Interface
+  - id: phase1-config-tdd
+    title: Phase 1 — Config Loader & Schema (TDD)
     objectives:
-      - Create Express API endpoints for study, sites, subjects, and forms.
-      - Enable concurrent simulations.
-      - Add basic logging.
+      - Write unit tests for valid/invalid config parsing and invariants
+      - Implement config loader & schema validation
+      - Add seed handling for determinism
     deliverables:
-      - server.ts
-      - api.spec.yaml
-    timeline: 2 weeks
+      - src/config.ts
+      - config.spec.yaml (schema) validated via tests
+      - study.config.yaml (fixtures: valid + invalid)
+      - tests/unit/configLoader.test.ts
+    exit_criteria:
+      - All config tests pass; invalid cases throw; determinism options present
+    dependencies: [phase0-testing-foundation]
 
-  - id: phase3-realism
-    title: Phase 3 — Realistic Study Behavior
+  - id: phase2-simulation-core-tdd
+    title: Phase 2 — Simulation Core (TDD)
     objectives:
-      - Support delayed/missed visits and partial forms.
-      - Add configurable queries and simulated updates over time.
-      - Introduce “speed factor” control.
+      - Write unit tests for subject seeding, visit selection, delay/miss/partial logic
+      - Implement generator with seeded RNG
+      - Add metrics/logging hooks for verification
     deliverables:
-      - generator.ts (enhanced)
-      - simulation.spec.yaml
-    timeline: 3 weeks
+      - src/generator.ts
+      - tests/unit/generator.test.ts
+    exit_criteria:
+      - Deterministic results for same seed + config
+      - Invariants satisfied (see simulation.spec.yaml)
+    dependencies: [phase1-config-tdd]
 
-  - id: phase4-cloud
-    title: Phase 4 — Azure Deployment
+  - id: phase3-api-surface-tdd
+    title: Phase 3 — REST API Surface (TDD)
     objectives:
-      - Containerize the simulator with Docker.
-      - Deploy to Azure Container Apps or AKS.
-      - Add telemetry (Application Insights).
+      - Write API tests from acceptance criteria & examples
+      - Implement endpoints and error handling
+      - Add health endpoint for smoke tests
+    deliverables:
+      - src/server.ts
+      - tests/api/*.test.ts
+    exit_criteria:
+      - All API tests (happy and error paths) pass
+    dependencies: [phase2-simulation-core-tdd]
+
+  - id: phase4-realism-tdd
+    title: Phase 4 — Realism Extensions (TDD)
+    objectives:
+      - Extend tests for missed/delayed/partial and queries probabilities
+      - Implement/adjust simulation parameters
+    deliverables:
+      - src/generator.ts (enhanced)
+      - tests/unit/generator.behavior.test.ts
+    exit_criteria:
+      - Behavior validated against spec invariants & probabilities
+    dependencies: [phase3-api-surface-tdd]
+
+  - id: phase5-cloud
+    title: Phase 5 — Cloud & Observability
+    objectives:
+      - Containerize app
+      - Add basic telemetry
     deliverables:
       - Dockerfile
-      - helm-chart.yaml
-    timeline: 2 weeks
+      - telemetry scaffolding
+    exit_criteria:
+      - Container boots; health endpoint returns 200
+    dependencies: [phase3-api-surface-tdd, phase4-realism-tdd]

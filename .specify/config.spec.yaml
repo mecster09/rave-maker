@@ -1,27 +1,28 @@
 meta:
   id: rave-config
-  title: Study Configuration Specification (V2)
-  version: 2.0.0
+  title: Study Configuration Specification (V3 - TDD)
+  version: 3.0.0
   description: |
-    Configuration specification defining simulation parameters, visits, queries, and study structure.
-    Includes behavioral semantics for autonomous generation.
+    YAML configuration schema with behavioral semantics and invariants to support TDD and determinism.
 
 structure:
   root:
     study:
       id: string
       name: string
+      seed: number?
+        behavior: "When provided, all random operations must be deterministic for reproducible tests."
       speed_factor: number
-        behavior: "Controls study time acceleration vs real time"
+        behavior: "Multiplies simulated time progression relative to real time."
       interval_ms: number
-        behavior: "Simulation tick interval in milliseconds"
+        behavior: "Simulation tick interval (ms)."
       batch_percentage: number
-        behavior: "Percentage of subjects updated per tick"
+        behavior: "Percentage of subjects updated per tick (0..100)."
     structure:
       sites: integer
-        behavior: "Number of sites in the study"
+        behavior: "Number of sites."
       subjects_per_site: integer
-        behavior: "Number of subjects enrolled per site"
+        behavior: "Subjects per site."
     visits:
       type: array
       items:
@@ -34,27 +35,90 @@ structure:
     fields:
       name: string
       day: integer
-        behavior: "Planned day of visit relative to subject enrollment"
+        behavior: "Planned day offset from enrollment."
       forms: string[]
-        behavior: "List of forms to be filled for this visit"
+        behavior: "Forms captured at this visit."
       probability: number
-        behavior: "Likelihood this visit occurs if simulate_missed is true"
+        behavior: "Probability in [0..1] that the visit occurs when simulate_missed is true."
       simulate_missed: boolean
-        behavior: "Whether this visit can be skipped according to probability"
+        behavior: "If true, visit may be skipped according to probability."
       simulate_delayed: boolean
-        behavior: "Whether this visit can be delayed"
+        behavior: "If true, visit day may be shifted by 0..max_delay_days."
       max_delay_days: integer?
-        behavior: "Maximum delay in days if simulate_delayed is true"
+        behavior: "Required if simulate_delayed is true; must be >= 0."
       partial_forms: boolean
-        behavior: "If true, some form fields may be missing"
+        behavior: "If true, fields may be nulled at random."
       missing_field_probability: number?
-        behavior: "Probability that a field is missing when partial_forms is true"
+        behavior: "Probability in [0..1] for each field to be null when partial_forms is true."
 
   QueryConfig:
-    description: Study-level query simulation configuration.
+    description: Rules for automatic query generation.
     fields:
       enabled: boolean
       missing_data_probability: number
-        behavior: "Probability a missing-data query is generated"
+        behavior: "Probability in [0..1] of generating a MissingData query after form creation."
       out_of_range_probability: number
-        behavior: "Probability an out-of-range query is generated"
+        behavior: "Probability in [0..1] of generating an OutOfRange query after form creation."
+
+invariants:
+  - name: BatchPercentBounds
+    description: batch_percentage must be within 0..100
+    rule: "0 <= study.batch_percentage <= 100"
+  - name: VisitProbabilityBounds
+    description: probability must be within 0..1
+    rule: "for v in visits: 0 <= v.probability <= 1"
+  - name: DelayRequiresMax
+    description: simulate_delayed requires max_delay_days
+    rule: "for v in visits: if v.simulate_delayed == true then v.max_delay_days is number and v.max_delay_days >= 0"
+  - name: MissingFieldProbBounds
+    description: missing_field_probability must be within 0..1 when present
+    rule: "for v in visits: if v.missing_field_probability != null then 0 <= v.missing_field_probability <= 1"
+
+examples:
+  valid:
+    - name: "Minimal deterministic study"
+      yaml: |
+        study:
+          id: "s-001"
+          name: "Deterministic Demo"
+          seed: 42
+          speed_factor: 60
+          interval_ms: 5000
+          batch_percentage: 10
+        structure:
+          sites: 2
+          subjects_per_site: 5
+        visits:
+          - name: "Screening"
+            day: 0
+            forms: ["Demographics", "Vitals"]
+            probability: 1.0
+            simulate_missed: false
+            simulate_delayed: false
+            partial_forms: false
+        queries:
+          enabled: true
+          missing_data_probability: 0.05
+          out_of_range_probability: 0.02
+  invalid:
+    - name: "Delayed without max"
+      yaml: |
+        study:
+          id: "bad"
+          name: "NoMaxDelay"
+          speed_factor: 10
+          interval_ms: 1000
+          batch_percentage: 5
+        structure:
+          sites: 1
+          subjects_per_site: 1
+        visits:
+          - name: "Baseline"
+            day: 14
+            forms: ["Vitals"]
+            probability: 0.9
+            simulate_missed: true
+            simulate_delayed: true
+            partial_forms: false
+        queries:
+          enabled: false

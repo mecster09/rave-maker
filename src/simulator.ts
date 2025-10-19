@@ -1,4 +1,4 @@
-import { loadConfig, SimulatorConfig, VisitConfig } from './config';
+import { loadConfig, SimulatorConfig } from './config';
 import { InMemoryStorage } from './storage/InMemoryStorage';
 import { Generator } from './generator';
 import { v4 as uuid } from 'uuid';
@@ -16,7 +16,7 @@ export class Simulator {
     this.study = {
       id: config.study.id || uuid(),
       name: config.study.name,
-      description: config.study.description,
+      description: undefined,
       config
     };
 
@@ -28,10 +28,13 @@ export class Simulator {
 
   start() {
     if (!this.generator) throw new Error("Simulator not initialized");
-    const cfg = this.study.config.simulation;
-    const delay = (cfg.start_delay_sec ?? 0) * 1000;
-    setTimeout(() => this.generator!.start(cfg.update_interval_sec * 1000, cfg.update_batch_pct, cfg.time_acceleration), delay);
+    const cfg = this.study.config.study;
+    setTimeout(() =>
+      this.generator!.simulateVisits(cfg.batch_percentage, cfg.speed_factor),
+      this.study.config.study.interval_ms
+    );
   }
 
   getStorage() { return this.storage; }
+  getStudyId() { return this.study.id; }
 }

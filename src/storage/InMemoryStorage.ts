@@ -14,15 +14,9 @@ export class InMemoryStorage implements Storage {
   async createForm(form: FormRecord) { this.forms.push(form); }
   async createQuery(query: Query) { this.queries.push(query); }
 
-  async getSubjects(studyId: string) {
-    return this.subjects.filter(s => s.studyId === studyId);
-  }
-
+  async getSubjects(studyId: string) { return this.subjects.filter(s => s.studyId === studyId); }
   async getForms(studyId: string, subjectId?: string) {
     return this.forms.filter(f => f.studyId === studyId && (!subjectId || f.subjectId === subjectId));
   }
-
-  async getQueries(studyId: string) {
-    return this.queries.filter(q => q.studyId === studyId);
-  }
+  async getQueries(studyId: string) { return this.queries.filter(q => q.studyId === studyId); }
 }
