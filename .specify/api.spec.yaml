@@ -1,0 +1,85 @@
+meta:
+  id: rave-simulator-api
+  title: RAVE Simulator REST API
+  version: 1.0.0
+  description: |
+    REST API specification for interacting with the simulated RAVE study data.
+    Provides read-only access to simulated studies, sites, subjects, forms, and queries.
+
+servers:
+  - url: http://localhost:3000
+    description: Local development server
+
+endpoints:
+  /api/studies:
+    get:
+      summary: List all simulated studies
+      response:
+        200:
+          type: array
+          items: Study
+
+  /api/sites:
+    get:
+      summary: List all sites
+      response:
+        200:
+          type: array
+          items: Site
+
+  /api/subjects:
+    get:
+      summary: List all subjects
+      response:
+        200:
+          type: array
+          items: Subject
+
+  /api/forms:
+    get:
+      summary: List all form data records
+      response:
+        200:
+          type: array
+          items: FormRecord
+
+  /api/queries:
+    get:
+      summary: List all simulated data queries
+      response:
+        200:
+          type: array
+          items: Query
+
+models:
+  Study:
+    id: string
+    name: string
+    description?: string
+  Site:
+    id: string
+    studyId: string
+    code: string
+    name: string
+  Subject:
+    id: string
+    studyId: string
+    siteId: string
+    subjectCode: string
+  FormRecord:
+    id: string
+    studyId: string
+    subjectId: string
+    siteId: string
+    name: string
+    data: object
+    lastUpdated: string
+  Query:
+    id: string
+    studyId: string
+    formId: string
+    field: string
+    type: string
+    status: string
+    text: string
+    createdAt: string

@@ -1,0 +1,45 @@
+meta:
+  id: rave-config
+  title: Study Configuration Specification
+  version: 1.0.0
+  description: |
+    Configuration specification defining how simulation parameters,
+    visits, queries, and study structure are defined in YAML.
+
+structure:
+  root:
+    study:
+      id: string
+      name: string
+      speed_factor: number
+      interval_ms: number
+      batch_percentage: number
+    structure:
+      sites: integer
+      subjects_per_site: integer
+    visits:
+      type: array
+      items:
+        ref: Visit
+    queries:
+      ref: QueryConfig
+
+  Visit:
+    description: Visit-level configuration.
+    fields:
+      name: string
+      day: integer
+      forms: string[]
+      probability: number
+      simulate_missed: boolean
+      simulate_delayed: boolean
+      max_delay_days: integer?
+      partial_forms: boolean
+      missing_field_probability: number?
+
+  QueryConfig:
+    description: Study-level query simulation configuration.
+    fields:
+      enabled: boolean
+      missing_data_probability: number
+      out_of_range_probability: number

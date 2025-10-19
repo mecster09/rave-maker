@@ -1,0 +1,42 @@
+meta:
+  id: rave-principles
+  title: Engineering & Architectural Principles
+  version: 1.0.0
+  description: |
+    Defines guiding principles for the Medidata RAVE Mock Study Simulator project.
+
+principles:
+  - id: modular-architecture
+    title: Modular and Extensible
+    description: |
+      The simulator is decomposed into independent modules (API, simulation, configuration)
+      to allow concurrent studies and separate scaling in Azure.
+
+  - id: configuration-first
+    title: Configuration Driven
+    description: |
+      Every simulation parameter must be defined via a YAML config file to ensure reproducibility,
+      easy tweaking, and transparent version control.
+
+  - id: realism
+    title: Realistic Study Behavior
+    description: |
+      Simulations must mimic real-world clinical trial patterns, including delayed visits,
+      missed visits, partial forms, and realistic query rates.
+
+  - id: observability
+    title: Observability and Monitoring
+    description: |
+      Simulation activity should be logged and measurable for performance testing, using metrics
+      such as data generation rate and subject progression.
+
+  - id: cloud-ready
+    title: Cloud Native
+    description: |
+      Must run as a stateless Node.js/TypeScript service deployable to Azure Container Apps or AKS.
+
+  - id: maintainable
+    title: Maintainable Codebase
+    description: |
+      Follows TypeScript strict mode, linting, and TDD principles with Jest for testing and
+      automated CI/CD pipeline integration.

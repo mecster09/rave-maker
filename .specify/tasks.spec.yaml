@@ -1,0 +1,42 @@
+meta:
+  id: rave-tasks
+  title: Engineering Tasks
+  version: 1.0.0
+  description: |
+    Detailed breakdown of implementation and testing tasks mapped to core simulator modules.
+
+tasks:
+  - id: cfg-loader
+    module: Configuration
+    description: Implement YAML configuration loader with schema validation.
+    status: done
+
+  - id: sim-engine
+    module: Simulation
+    description: Core simulator loop for generating and updating study data.
+    status: done
+
+  - id: sim-delayed-visits
+    module: Simulation
+    description: Add realistic visit delays and missed visits.
+    status: done
+
+  - id: sim-partial-forms
+    module: Simulation
+    description: Support partial forms and missing fields.
+    status: done
+
+  - id: api-endpoints
+    module: API
+    description: REST endpoints for studies, sites, subjects, forms, and queries.
+    status: done
+
+  - id: azure-deploy
+    module: Deployment
+    description: Containerize and deploy to Azure Container Apps.
+    status: planned
+
+  - id: telemetry
+    module: Monitoring
+    description: Add metrics collection for data generation rate and error logs.
+    status: planned

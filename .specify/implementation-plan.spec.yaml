@@ -1,0 +1,53 @@
+meta:
+  id: rave-implementation-plan
+  title: Implementation Plan
+  version: 1.0.0
+  description: |
+    Phased roadmap for the design, implementation, and deployment of the RAVE Mock Study Simulator.
+
+phases:
+  - id: phase1-core
+    title: Phase 1 — Core Simulation Engine
+    objectives:
+      - Build simulation engine for sites, subjects, and visits.
+      - Implement YAML-based configuration loader.
+      - Add realistic data generation via faker.
+    deliverables:
+      - simulator.ts
+      - generator.ts
+      - config.ts
+      - study.config.yaml
+    timeline: 2 weeks
+
+  - id: phase2-api
+    title: Phase 2 — REST API Interface
+    objectives:
+      - Create Express API endpoints for study, sites, subjects, and forms.
+      - Enable concurrent simulations.
+      - Add basic logging.
+    deliverables:
+      - server.ts
+      - api.spec.yaml
+    timeline: 2 weeks
+
+  - id: phase3-realism
+    title: Phase 3 — Realistic Study Behavior
+    objectives:
+      - Support delayed/missed visits and partial forms.
+      - Add configurable queries and simulated updates over time.
+      - Introduce “speed factor” control.
+    deliverables:
+      - generator.ts (enhanced)
+      - simulation.spec.yaml
+    timeline: 3 weeks
+
+  - id: phase4-cloud
+    title: Phase 4 — Azure Deployment
+    objectives:
+      - Containerize the simulator with Docker.
+      - Deploy to Azure Container Apps or AKS.
+      - Add telemetry (Application Insights).
+    deliverables:
+      - Dockerfile
+      - helm-chart.yaml
+    timeline: 2 weeks
