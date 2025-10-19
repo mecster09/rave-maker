@@ -1,10 +1,10 @@
 meta:
   id: rave-config
-  title: Study Configuration Specification
-  version: 1.0.0
+  title: Study Configuration Specification (V2)
+  version: 2.0.0
   description: |
-    Configuration specification defining how simulation parameters,
-    visits, queries, and study structure are defined in YAML.
+    Configuration specification defining simulation parameters, visits, queries, and study structure.
+    Includes behavioral semantics for autonomous generation.
 
 structure:
   root:
@@ -12,11 +12,16 @@ structure:
       id: string
       name: string
       speed_factor: number
+        behavior: "Controls study time acceleration vs real time"
       interval_ms: number
+        behavior: "Simulation tick interval in milliseconds"
       batch_percentage: number
+        behavior: "Percentage of subjects updated per tick"
     structure:
       sites: integer
+        behavior: "Number of sites in the study"
       subjects_per_site: integer
+        behavior: "Number of subjects enrolled per site"
     visits:
       type: array
       items:
@@ -29,17 +34,27 @@ structure:
     fields:
       name: string
       day: integer
+        behavior: "Planned day of visit relative to subject enrollment"
       forms: string[]
+        behavior: "List of forms to be filled for this visit"
       probability: number
+        behavior: "Likelihood this visit occurs if simulate_missed is true"
       simulate_missed: boolean
+        behavior: "Whether this visit can be skipped according to probability"
       simulate_delayed: boolean
+        behavior: "Whether this visit can be delayed"
       max_delay_days: integer?
+        behavior: "Maximum delay in days if simulate_delayed is true"
       partial_forms: boolean
+        behavior: "If true, some form fields may be missing"
       missing_field_probability: number?
+        behavior: "Probability that a field is missing when partial_forms is true"
 
   QueryConfig:
     description: Study-level query simulation configuration.
     fields:
       enabled: boolean
       missing_data_probability: number
+        behavior: "Probability a missing-data query is generated"
       out_of_range_probability: number
+        behavior: "Probability an out-of-range query is generated"

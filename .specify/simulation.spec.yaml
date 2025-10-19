@@ -1,10 +1,9 @@
 meta:
   id: rave-simulation
-  title: Medidata RAVE Simulation Engine
-  version: 1.0.0
+  title: Medidata RAVE Simulation Engine (V2)
+  version: 2.0.0
   description: |
-    Simulation engine specification defining how studies, subjects, visits,
-    forms, and queries are generated dynamically within the mock RAVE simulator.
+    Defines study, subject, visit, form, and query entities along with dynamic behavior.
 
 entities:
   Study:
@@ -20,13 +19,11 @@ entities:
       queries: QueryConfig
 
   StudyStructure:
-    description: Structural setup for a study.
     fields:
       sites: integer
       subjects_per_site: integer
 
   Visit:
-    description: Visit configuration and generation rules.
     fields:
       name: string
       day: integer
@@ -39,8 +36,17 @@ entities:
       missing_field_probability: number?
 
   QueryConfig:
-    description: Configuration for query simulation.
     fields:
       enabled: boolean
       missing_data_probability: number
       out_of_range_probability: number
+
+dynamics:
+  subject_progression:
+    description: Subjects progress through visits sequentially according to study days.
+    cadence: "New subjects enrolled every (interval_ms / speed_factor) ms"
+    behavior: "Subjects may miss or delay visits per Visit configuration"
+  data_updates:
+    description: Form data is periodically generated or updated to simulate CRF entries over time.
+  query_generation:
+    description: Queries are probabilistically injected based on QueryConfig."
