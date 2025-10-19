@@ -11,16 +11,18 @@
     "test:api": "jest tests/api"
   },
   "dependencies": {
+    "@faker-js/faker": "^8.4.1",
     "express": "^4.18.2",
     "js-yaml": "^4.1.0",
-    "@faker-js/faker": "^8.4.1",
     "uuid": "^9.0.1"
   },
   "devDependencies": {
     "@types/express": "^4.17.21",
     "@types/jest": "^29.5.12",
+    "@types/js-yaml": "^4.0.9",
     "@types/node": "^20.11.30",
     "@types/supertest": "^2.0.15",
+    "@types/uuid": "^10.0.0",
     "jest": "^29.7.0",
     "supertest": "^7.0.0",
     "ts-jest": "^29.1.1",
