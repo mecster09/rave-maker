@@ -45,7 +45,7 @@ rave-simulator/
 │   │   ├── configLoader.test.ts
 │   │   └── generator.test.ts
 │   │   └── storage.test.ts
-│   │   └── itils.random.test.ts
+│   │   └── utils.random.test.ts
 │   ├── api/                      # API integration tests (Supertest)
 │   │   ├── health.test.ts
 │   │   └── endpoints.test.ts
