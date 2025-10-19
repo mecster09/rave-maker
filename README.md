@@ -1,4 +1,4 @@
-# 🧪 Medidata RAVE Study Simulator (V3)
+# 🧪 Medidata RAVE Study Simulator (V3) [![🧪 Run Unit Tests](https://github.com/mecster09/rave-maker/actions/workflows/test.yml/badge.svg)](https://github.com/mecster09/rave-maker/actions/workflows/test.yml)
 
 A **TypeScript-based mock API** that simulates live **Medidata RAVE clinical studies** — complete with subjects, sites, forms, visits, queries, and realistic study dynamics.
 
