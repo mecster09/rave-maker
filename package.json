@@ -7,7 +7,9 @@
     "dev": "tsx src/index.ts",
     "build": "tsc -p tsconfig.json",
     "start": "node dist/index.js",
-    "test": "jest --passWithNoTests"
+    "test": "npm run test:unit && npm run test:api",
+    "test:unit": "jest --passWithNoTests --testPathPattern=tests/unit",
+    "test:api": "jest --passWithNoTests --testPathPattern=tests/api"
   },
   "dependencies": {
     "@faker-js/faker": "^9.0.0",
