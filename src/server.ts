@@ -1,31 +1,55 @@
-import express from 'express';
+// ==========================================
+// RWS Server
+// ==========================================
+// Fastify server with RWS endpoints
+
+import Fastify from 'fastify';
 import { Simulator } from './simulator';
+import { registerRWSRoutes } from './rws';
 
-export function buildServer(sim?: Simulator) {
-  const app = express();
-  app.use(express.json());
-
-  app.get('/health', (_req, res) => res.json({ status: 'ok' }));
-
-  app.get('/api/studies/:id/subjects', async (req, res) => {
-    const data = await sim?.getStorage().getSubjects(req.params.id);
-    res.json(data ?? []);
+export function buildServer(sim?: Simulator, enableLogging = false) {
+  const app = Fastify({
+    logger: enableLogging ? {
+      transport: {
+        target: 'pino-pretty',
+        options: {
+          translateTime: 'HH:MM:ss Z',
+          ignore: 'pid,hostname'
+        }
+      }
+    } : false
   });
 
-  app.get('/api/studies/:id/forms', async (req, res) => {
-    const data = await sim?.getStorage().getForms(req.params.id, req.query.subjectId as string | undefined);
-    res.json(data ?? []);
+  if (enableLogging) {
+    app.addHook('onRequest', async (request, _reply) => {
+      console.log(`[RWS] ${request.method} ${request.url}`);
+    });
+
+    app.addHook('onResponse', async (request, reply) => {
+      console.log(`[RWS] ${request.method} ${request.url} - ${reply.statusCode}`);
+    });
+  }
+
+  // Health check endpoint (legacy compatibility)
+  app.get('/health', async (_request, reply) => {
+    return reply.send({ status: 'ok' });
   });
 
-  app.get('/api/studies/:id/queries', async (req, res) => {
-    const data = await sim?.getStorage().getQueries(req.params.id);
-    res.json(data ?? []);
+  // Control endpoint for simulation
+  app.post('/api/control/tick', async (_request, reply) => {
+    if (!sim) {
+      return reply.code(503).send({ error: 'Simulator not initialized' });
+    }
+    await sim.tick();
+    return reply.send({ status: 'advanced' });
   });
 
-  app.post('/api/control/tick', async (_req, res) => {
-    await sim?.tick();
-    res.json({ status: 'advanced' });
-  });
+  // Register RWS routes
+  if (sim) {
+    const storage = sim.getStorage();
+    const config = sim.getConfig();
+    registerRWSRoutes(app, storage, config);
+  }
 
   return app;
 }

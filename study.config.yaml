@@ -1,15 +1,30 @@
 # ==========================================
-# Test Study Configuration (Minimal Example)
+# RWS Study Configuration
 # ==========================================
 
 study:
-  id: "TEST-STUDY-001"
+  project_name: "RaveSim"
+  environment: "Test"
   name: "RaveSim QA Validation Study"
+  description: "Automated testing and validation study for RWS integration"
+  metadata_version_oid: "1"
   seed: 12345
   speed_factor: 1.0
   interval_ms: 1500
   batch_percentage: 25
-  logging: true
+
+rws:
+  version: "1.18.0"
+  auth:
+    users:
+      - username: "testuser"
+        password: "testpass"
+      - username: "admin"
+        password: "admin123"
+
+logging:
+  simulator: true
+  api: true
 
 structure:
   sites: 2

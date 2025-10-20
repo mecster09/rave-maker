@@ -5,7 +5,7 @@ describe('config.ts', () => {
   describe('loadConfig()', () => {
     it('loads a valid configuration successfully', () => {
       const config = loadConfig('study.config.yaml');
-      expect(config.study.name).toBe('Hypertension Simulation');
+      expect(config.study.name).toBe('RaveSim QA Validation Study');
       expect(Array.isArray(config.visits)).toBe(true);
     });
 
@@ -20,7 +20,8 @@ describe('config.ts', () => {
   describe('validation rules', () => {
     const base = (overrides: string) => `
 study:
-  id: "id"
+  project_name: "TestProject"
+  environment: "Test"
   name: "test"
   speed_factor: 1
   interval_ms: 1

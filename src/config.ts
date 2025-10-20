@@ -19,14 +19,28 @@ export interface QueryConfig {
   out_of_range_probability: number;
 }
 
+export interface RWSAuthUser {
+  username: string;
+  password: string;
+}
+
 export interface SimulatorConfig {
   study: {
-    id: string;
-    name: string;
+    project_name: string;          // e.g., "RaveSim"
+    environment: string;            // e.g., "Test", "Prod", "Dev"
+    name: string;                   // Display name
+    description?: string;
+    metadata_version_oid?: string;  // Default "1"
     seed?: number;
     speed_factor: number;
     interval_ms: number;
     batch_percentage: number;
+  };
+  rws: {
+    version?: string;               // RWS version, default "1.18.0"
+    auth?: {
+      users?: RWSAuthUser[];        // Basic auth users
+    };
   };
   structure: {
     sites: number;
@@ -34,6 +48,10 @@ export interface SimulatorConfig {
   };
   visits: VisitConfig[];
   queries: QueryConfig;
+  logging?: {
+    simulator?: boolean;
+    api?: boolean;
+  };
 }
 
 function assert(condition: any, message: string): asserts condition {
@@ -42,6 +60,8 @@ function assert(condition: any, message: string): asserts condition {
 
 function validate(cfg: SimulatorConfig): void {
   assert(cfg.study != null, "study section is required");
+  assert(cfg.study.project_name, "study.project_name is required");
+  assert(cfg.study.environment, "study.environment is required");
   assert(cfg.structure != null, "structure section is required");
   assert(Array.isArray(cfg.visits), "visits must be an array");
 

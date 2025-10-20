@@ -13,13 +13,14 @@
   },
   "dependencies": {
     "@faker-js/faker": "^9.0.0",
-    "express": "^5.1.0",
+    "@fastify/basic-auth": "^6.0.1",
+    "fast-xml-parser": "^4.5.0",
     "fastify": "^5.0.0",
     "js-yaml": "^4.1.0",
+    "pino-pretty": "^11.0.0",
     "uuid": "^9.0.1"
   },
   "devDependencies": {
-    "@types/express": "^5.0.3",
     "@types/jest": "^30.0.0",
     "@types/js-yaml": "^4.0.9",
     "@types/node": "^20.11.30",
@@ -32,22 +33,24 @@
     "typescript": "^5.5.4"
   },
   "jest": {
-  "preset": "ts-jest/presets/default-esm",
-  "testEnvironment": "node",
-  "extensionsToTreatAsEsm": [".ts"],
-  "transform": {
-    "^.+\\.tsx?$": [
-      "ts-jest",
-      {
-        "useESM": true,
-        "isolatedModules": true,
-        "diagnostics": false
-      }
+    "preset": "ts-jest/presets/default-esm",
+    "testEnvironment": "node",
+    "extensionsToTreatAsEsm": [
+      ".ts"
+    ],
+    "transform": {
+      "^.+\\.tsx?$": [
+        "ts-jest",
+        {
+          "useESM": true
+        }
+      ]
+    },
+    "moduleNameMapper": {
+      "^(\\.{1,2}/.*)\\.js$": "$1"
+    },
+    "testMatch": [
+      "**/tests/**/*.test.ts"
     ]
-  },
-  "moduleNameMapper": {
-    "^(\\.{1,2}/.*)\\.js$": "$1"
-  },
-  "testMatch": ["**/tests/**/*.test.ts"]
   }
 }

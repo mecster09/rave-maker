@@ -1,23 +1,35 @@
 import { InMemoryStorage } from '../../src/storage/InMemoryStorage';
 import { Generator } from '../../src/generator';
 import { Simulator } from '../../src/simulator';
-import { v4 as uuid } from 'uuid';
-import { Study, Visit } from '../../src/models';
+import { Study, VisitConfig } from '../../src/models';
 
 describe('generator.ts', () => {
   const makeStudy = (): Study => ({
-    id: 'study1',
+    oid: 'UnitTest(Dev)',
+    projectName: 'UnitTest',
+    environment: 'Dev',
     name: 'UnitTest',
+    metadataVersionOID: '1',
     config: {
-      study: { seed: 42, speed_factor: 1, interval_ms: 1, batch_percentage: 100 },
+      study: { 
+        project_name: 'UnitTest',
+        environment: 'Dev',
+        name: 'UnitTest',
+        metadata_version_oid: '1',
+        seed: 42, 
+        speed_factor: 1, 
+        interval_ms: 1, 
+        batch_percentage: 100 
+      },
       structure: { sites: 1, subjects_per_site: 1 },
-    },
+      visits: [],
+      queries: { generation_probability: 0 },
+      logging: {}
+    } as any,
   });
 
-  const makeVisit = (overrides?: Partial<Visit>): Visit => ({
-    id: uuid(),
-    studyId: 'study1',
-    name: 'Vitals',
+  const makeVisit = (overrides?: Partial<VisitConfig>): VisitConfig => ({
+    name: 'Screening',
     day: 1,
     forms: ['Vitals'],
     probability: 1,
@@ -28,16 +40,19 @@ describe('generator.ts', () => {
     const store = new InMemoryStorage();
     const gen = new Generator(store, makeStudy(), [makeVisit()]);
     await gen.seedOnce();
-    const subjects = await store.getSubjects('study1');
+    const subjects = await store.getSubjects('UnitTest(Dev)');
     expect(subjects.length).toBe(1);
   });
 
-  it('creates form data with partial fields when partial_forms is true', () => {
+  it('creates form data with item group instances', async () => {
     const store = new InMemoryStorage();
-    const gen = new Generator(store, makeStudy(), []);
-    const visit = makeVisit({ partial_forms: true, missing_field_probability: 1 });
-    const data = (gen as any).makeFormData('Vitals', visit);
-    Object.values(data).forEach(v => expect(v).toBeNull());
+    const gen = new Generator(store, makeStudy(), [makeVisit()]);
+    await gen.seedOnce();
+    await gen.simulateVisits(100, 1);
+    const forms = await store.getForms('UnitTest(Dev)');
+    expect(forms.length).toBeGreaterThan(0);
+    expect(forms[0].itemGroupInstances).toBeDefined();
+    expect(forms[0].itemGroupInstances.length).toBeGreaterThan(0);
   });
 
   it('handles simulate_delayed and simulate_missed branches', async () => {
@@ -51,7 +66,7 @@ describe('generator.ts', () => {
     const gen = new Generator(store, makeStudy(), [visit]);
     await gen.seedOnce();
     await gen.simulateVisits(100, 1);
-    const forms = await store.getForms('study1');
+    const forms = await store.getForms('UnitTest(Dev)');
     expect(forms.length).toBeGreaterThanOrEqual(0);
   });
 
@@ -61,7 +76,7 @@ describe('generator.ts', () => {
     const gen = new Generator(store, makeStudy(), [visit]);
     await gen.seedOnce();
     await gen.simulateVisits(100, 1);
-    const forms = await store.getForms('study1');
+    const forms = await store.getForms('UnitTest(Dev)');
     expect(forms.length).toBeGreaterThan(0);
   });
 });

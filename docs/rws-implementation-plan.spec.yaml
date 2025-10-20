@@ -1,0 +1,687 @@
+# ==========================================
+# RWS API Implementation Plan (Spec-Kit)
+# ==========================================
+# Purpose: Transform rave-maker into a fully RWS-compatible Medidata RAVE EDC simulator
+# Version: 1.0.0
+# Date: 2025-10-20
+
+metadata:
+  project: rave-maker-rws-upgrade
+  version: 4.0.0
+  status: planning
+  target_completion: 2025-11-03
+  complexity: high
+  estimated_effort: 2-3 weeks
+
+objectives:
+  primary: |
+    Transform the current JSON-based study simulator into a fully compatible 
+    Medidata RAVE Web Services (RWS) API implementation that can be used with 
+    Medidata.RWS.NET.Standard client library.
+  
+  secondary:
+    - Implement CDISC ODM 1.3 XML format for clinical data
+    - Support RWS authentication mechanisms
+    - Enable realistic testing of RWS client integrations
+    - Clean, focused RWS-only implementation
+
+  success_criteria:
+    - Medidata.RWS.NET.Standard client can connect successfully
+    - All core RWS endpoints return valid ODM XML
+    - Study naming follows ProjectName(Environment) convention
+    - Authentication layer validates credentials
+    - All tests updated and passing
+    - New RWS-specific tests coverage >80%
+
+principles:
+  architecture:
+    - Pure RWS API implementation - remove legacy JSON endpoints
+    - ODM XML as the primary data format
+    - Keep data generation logic independent of output format
+    - Follow CDISC ODM 1.3 specification strictly
+  
+  compatibility:
+    - Primary target: Medidata.RWS.NET.Standard library
+    - Secondary: General RWS API consumers
+  
+  testing:
+    - TDD approach for all RWS endpoints
+    - Integration tests with actual ODM XML parsing
+    - Validation against CDISC ODM schema
+    - Mock RWS client request/response tests
+
+technical_stack:
+  new_dependencies:
+    fast-xml-parser:
+      purpose: Generate and parse ODM XML efficiently
+      version: "^4.5.0"
+      justification: Fast, lightweight, TypeScript-friendly XML library
+    
+    "@fastify/basic-auth":
+      purpose: HTTP Basic Authentication for RWS endpoints
+      version: "^6.0.1"
+      justification: Official Fastify plugin, well-maintained
+    
+  existing_dependencies:
+    fastify: Web server framework
+    faker: Data generation
+    uuid: Unique identifier generation
+    js-yaml: Configuration parsing
+
+architecture:
+  layers:
+    presentation:
+      description: HTTP API endpoints (RWS only)
+      components:
+        - /RaveWebServices/* routes
+        - Authentication middleware
+        - XML content-type handlers
+    
+    application:
+      description: Business logic and orchestration
+      components:
+        - ODM XML builders
+        - Study name parser (ProjectName(Environment))
+        - Authentication validator
+    
+    domain:
+      description: Core simulation logic
+      components:
+        - Generator (ODM structure native)
+        - Simulator (metadata versioning)
+        - ODM-based models
+    
+    infrastructure:
+      description: Data persistence and utilities
+      components:
+        - Storage (ODM-native queries)
+        - Seeded RNG
+        - Configuration loader
+
+  data_flow:
+    request_handling: |
+      Client Request → Authentication → Route Handler → 
+      Storage Query → ODM Builder → XML Response
+    
+    data_generation: |
+      Config → Simulator Init → Generator Seed → 
+      ODM Structure Creation → Storage → Tick Simulation
+
+implementation_phases:
+  phase_1_foundation:
+    title: Core Infrastructure & Dependencies
+    duration: 2-3 days
+    tasks:
+      - id: 1.1
+        title: Install XML dependencies
+        description: Add fast-xml-parser and @fastify/basic-auth
+        files:
+          - package.json
+        tests: Verify installation and imports
+      
+      - id: 1.2
+        title: Create ODM type definitions
+        description: Define TypeScript interfaces for ODM elements
+        files:
+          - src/odm/types.ts (new)
+        tests: Type checking passes
+      
+      - id: 1.3
+        title: Build ODM XML utility
+        description: Create XML builder functions using fast-xml-parser
+        files:
+          - src/odm/builder.ts (new)
+          - src/odm/index.ts (new)
+        tests:
+          - tests/unit/odm.builder.test.ts (new)
+        validation:
+          - Generated XML validates against ODM 1.3 schema
+          - Proper namespaces and structure
+  
+  phase_2_data_models:
+    title: RWS Data Structure Enhancement
+    duration: 3-4 days
+    tasks:
+      - id: 2.1
+        title: Update Study model
+        description: Add ProjectName, Environment, MetaDataVersionOID
+        files:
+          - src/models.ts
+        tests:
+          - tests/unit/models.test.ts (new)
+      
+      - id: 2.2
+        title: Add ODM hierarchy models
+        description: Create StudyEvent, ItemGroup, ItemData models
+        files:
+          - src/models.ts
+          - src/odm/models.ts (new)
+        tests: Model creation and validation
+      
+      - id: 2.3
+        title: Enhance Storage for ODM
+        description: Add methods for ODM queries (by OID, events, etc.)
+        files:
+          - src/storage/Storage.ts
+          - src/storage/InMemoryStorage.ts
+        tests:
+          - tests/unit/storage.test.ts (update)
+      
+      - id: 2.4
+        title: Update Generator for ODM
+        description: Generate data in ODM-compliant structure
+        files:
+          - src/generator.ts
+        tests:
+          - tests/unit/generator.test.ts (update)
+        validation:
+          - Generated data has StudyEvents
+          - Forms contain ItemGroups
+          - Items have proper OIDs
+  
+  phase_3_rws_endpoints:
+    title: RWS API Implementation
+    duration: 4-5 days
+    tasks:
+      - id: 3.1
+        title: Implement authentication middleware
+        description: Basic Auth for RWS endpoints
+        files:
+          - src/rws/auth.ts (new)
+          - src/rws/middleware.ts (new)
+        tests:
+          - tests/unit/rws.auth.test.ts (new)
+        validation:
+          - Valid credentials accepted
+          - Invalid credentials rejected with 401
+      
+      - id: 3.2
+        title: Create RWS route handlers
+        description: Implement all core RWS endpoints
+        files:
+          - src/rws/routes.ts (new)
+          - src/rws/handlers.ts (new)
+        endpoints:
+          - GET /RaveWebServices/version
+          - GET /RaveWebServices/twohundred
+          - GET /RaveWebServices/studies
+          - GET /RaveWebServices/studies/{project}({env})/subjects
+          - GET /RaveWebServices/studies/{project}({env})/datasets/regular
+          - GET /RaveWebServices/studies/{project}({env})/subjects/{key}/datasets/regular
+          - POST /RaveWebServices/studies/{project}({env})/subjects
+        tests:
+          - tests/api/rws.endpoints.test.ts (new)
+      
+      - id: 3.3
+        title: Replace server with RWS routes
+        description: Replace existing API routes with RWS routes
+        files:
+          - src/server.ts
+          - src/index.ts
+        tests:
+          - tests/api/rws.integration.test.ts (new)
+        note: Remove old /api/* routes, /health becomes /RaveWebServices/twohundred
+      
+      - id: 3.4
+        title: Create study name parser
+        description: Parse and validate ProjectName(Environment) format
+        files:
+          - src/rws/utils.ts (new)
+        tests:
+          - tests/unit/rws.utils.test.ts (new)
+        validation:
+          - "Mediflex(Prod)" → {project: "Mediflex", env: "Prod"}
+          - Invalid formats rejected
+  
+  phase_4_configuration:
+    title: Configuration & Setup
+    duration: 1-2 days
+    tasks:
+      - id: 4.1
+        title: Update config schema
+        description: Support RWS-style study naming
+        files:
+          - src/config.ts
+          - study.config.yaml
+        tests:
+          - tests/unit/configLoader.test.ts (update)
+      
+      - id: 4.2
+        title: Add RWS configuration
+        description: Add auth credentials, metadata versions, etc.
+        files:
+          - study.config.yaml
+          - src/config.ts
+        example: |
+          study:
+            project_name: "RaveSim"
+            environment: "Test"
+            metadata_version_oid: "1"
+          
+          rws:
+            version: "1.18.0"
+            auth:
+              username: "testuser"
+              password: "testpass"
+      
+      - id: 4.3
+        title: Initialize ODM metadata
+        description: Generate study metadata on initialization
+        files:
+          - src/simulator.ts
+        tests: Metadata properly generated
+  
+  phase_5_testing:
+    title: Comprehensive Testing
+    duration: 2-3 days
+    tasks:
+      - id: 5.1
+        title: Rewrite all tests for RWS
+        description: Convert all existing tests to RWS format
+        files:
+          - tests/unit/*.test.ts (update all)
+          - tests/api/*.test.ts (update all)
+        validation: All tests green with RWS endpoints
+      
+      - id: 5.2
+        title: Add RWS endpoint tests
+        description: Test all RWS endpoints with XML parsing
+        files:
+          - tests/api/rws.version.test.ts (new)
+          - tests/api/rws.studies.test.ts (new)
+          - tests/api/rws.subjects.test.ts (new)
+          - tests/api/rws.datasets.test.ts (new)
+        validation:
+          - XML responses parse correctly
+          - ODM structure valid
+          - Authentication enforced
+      
+      - id: 5.3
+        title: Integration tests with RWS client
+        description: Test with actual Medidata.RWS.NET.Standard patterns
+        files:
+          - tests/integration/rws.client.test.ts (new)
+        validation:
+          - Can list studies
+          - Can get subjects
+          - Can retrieve clinical data
+      
+      - id: 5.4
+        title: Coverage validation
+        description: Ensure >80% coverage maintained
+        validation:
+          - Overall coverage >80%
+          - RWS module coverage >85%
+  
+  phase_6_documentation:
+    title: Documentation & Examples
+    duration: 1-2 days
+    tasks:
+      - id: 6.1
+        title: Update README
+        description: Add RWS endpoint documentation
+        files:
+          - README.md
+        sections:
+          - RWS API Overview
+          - Authentication
+          - Endpoint Reference
+          - Example Requests/Responses
+      
+      - id: 6.2
+        title: Create RWS usage guide
+        description: Document how to use with Medidata.RWS.NET.Standard
+        files:
+          - docs/rws-usage-guide.md (new)
+        content:
+          - Connection setup
+          - Common requests
+          - Data format examples
+      
+      - id: 6.3
+        title: API reference documentation
+        description: Detailed RWS endpoint documentation
+        files:
+          - docs/rws-api-reference.md (new)
+        content:
+          - Endpoint list
+          - Parameters
+          - Response formats
+          - Error codes
+      
+      - id: 6.4
+        title: Update compatibility analysis
+        description: Update analysis to reflect implementation
+        files:
+          - RAVE_RWS_COMPATIBILITY_ANALYSIS.md
+        status: Mark as COMPLETED
+
+file_structure:
+  new_files:
+    src/odm/:
+      - types.ts                    # ODM TypeScript interfaces
+      - builder.ts                  # XML generation functions
+      - models.ts                   # ODM-specific data models
+      - validators.ts               # ODM validation utilities
+      - index.ts                    # Barrel export
+    
+    src/rws/:
+      - routes.ts                   # RWS route definitions
+      - handlers.ts                 # RWS request handlers
+      - auth.ts                     # Authentication logic
+      - middleware.ts               # RWS middleware
+      - utils.ts                    # Study name parser, etc.
+      - transformers.ts             # JSON → ODM transformers
+      - index.ts                    # Barrel export
+    
+    tests/unit/:
+      - odm.builder.test.ts         # ODM XML builder tests
+      - rws.auth.test.ts            # Auth tests
+      - rws.utils.test.ts           # RWS utility tests
+      - models.test.ts              # Enhanced model tests
+    
+    tests/api/:
+      - rws.version.test.ts         # Version endpoint
+      - rws.studies.test.ts         # Studies list
+      - rws.subjects.test.ts        # Subjects endpoint
+      - rws.datasets.test.ts        # Dataset endpoints
+    
+    tests/integration/:
+      - rws.client.test.ts          # RWS client integration
+    
+    docs/:
+      - rws-usage-guide.md          # How to use with RWS client
+      - rws-api-reference.md        # API documentation
+      - odm-structure-guide.md      # ODM data format guide
+  
+  modified_files:
+    - src/models.ts                 # Convert to ODM structures
+    - src/server.ts                 # Replace with RWS routes only
+    - src/index.ts                  # RWS initialization
+    - src/config.ts                 # RWS configuration
+    - src/generator.ts              # ODM data generation
+    - src/simulator.ts              # Metadata versioning
+    - src/storage/Storage.ts        # ODM query methods
+    - src/storage/InMemoryStorage.ts # ODM implementations
+    - study.config.yaml             # RWS format
+    - README.md                     # RWS-focused docs
+    - package.json                  # New dependencies
+  
+  removed_files:
+    - src/routes.ts                 # Old JSON routes (not needed)
+    - tests/helpers/setupApp.ts     # Replace with RWS setup
+
+odm_structure:
+  overview: |
+    CDISC ODM (Operational Data Model) 1.3 is an XML-based standard
+    for clinical trial data exchange. Our implementation focuses on
+    the ClinicalData section for RWS compatibility.
+  
+  hierarchy:
+    ODM:
+      attributes:
+        - FileType: "Snapshot"
+        - FileOID: UUID
+        - CreationDateTime: ISO 8601
+        - ODMVersion: "1.3"
+      children:
+        - ClinicalData
+    
+    ClinicalData:
+      attributes:
+        - StudyOID: "ProjectName(Environment)"
+        - MetaDataVersionOID: version number
+      children:
+        - SubjectData (multiple)
+    
+    SubjectData:
+      attributes:
+        - SubjectKey: Subject identifier
+      children:
+        - SiteRef
+        - StudyEventData (multiple)
+    
+    StudyEventData:
+      attributes:
+        - StudyEventOID: Visit identifier
+        - StudyEventRepeatKey: Repeat number
+      children:
+        - FormData (multiple)
+    
+    FormData:
+      attributes:
+        - FormOID: Form identifier
+        - FormRepeatKey: Repeat number
+      children:
+        - ItemGroupData (multiple)
+    
+    ItemGroupData:
+      attributes:
+        - ItemGroupOID: Group identifier
+      children:
+        - ItemData (multiple)
+    
+    ItemData:
+      attributes:
+        - ItemOID: Field identifier
+        - Value: Field value
+
+  example: |
+    <?xml version="1.0" encoding="utf-8"?>
+    <ODM FileType="Snapshot" 
+         FileOID="abc-123-def-456" 
+         CreationDateTime="2025-10-20T10:30:00-00:00" 
+         ODMVersion="1.3" 
+         xmlns="http://www.cdisc.org/ns/odm/v1.3">
+      <ClinicalData StudyOID="RaveSim(Test)" MetaDataVersionOID="1">
+        <SubjectData SubjectKey="SUBJ-001">
+          <SiteRef LocationOID="SITE-1" />
+          <StudyEventData StudyEventOID="SCREENING" StudyEventRepeatKey="1">
+            <FormData FormOID="VITALS" FormRepeatKey="1">
+              <ItemGroupData ItemGroupOID="VITALS_LOG_LINE">
+                <ItemData ItemOID="VITALS.BP_SYSTOLIC" Value="120" />
+                <ItemData ItemOID="VITALS.BP_DIASTOLIC" Value="80" />
+                <ItemData ItemOID="VITALS.HEART_RATE" Value="72" />
+              </ItemGroupData>
+            </FormData>
+          </StudyEventData>
+        </SubjectData>
+      </ClinicalData>
+    </ODM>
+
+rws_endpoints:
+  basic:
+    - endpoint: GET /RaveWebServices/version
+      description: Returns RWS version number
+      auth_required: false
+      response_type: text/plain
+      example_response: "1.18.0"
+    
+    - endpoint: GET /RaveWebServices/twohundred
+      description: Health check endpoint
+      auth_required: false
+      response_type: text/html
+      example_response: "<!DOCTYPE html>..."
+  
+  studies:
+    - endpoint: GET /RaveWebServices/studies
+      description: List all studies user has access to
+      auth_required: true
+      response_type: application/xml
+      response_structure: RWSStudies XML
+      example: |
+        <ODM>
+          <Study OID="RaveSim(Test)">
+            <GlobalVariables>
+              <StudyName>RaveSim</StudyName>
+              <StudyDescription>QA Validation Study</StudyDescription>
+            </GlobalVariables>
+          </Study>
+        </ODM>
+  
+  subjects:
+    - endpoint: GET /RaveWebServices/studies/{project}({env})/subjects
+      description: List all subjects in study
+      auth_required: true
+      response_type: application/xml
+      parameters:
+        - name: status
+          type: boolean
+          optional: true
+        - name: include
+          type: enum
+          values: [inactive, deleted, inactiveAndDeleted]
+          optional: true
+      response_structure: RWSSubjects XML
+      example: |
+        <ODM>
+          <ClinicalData StudyOID="RaveSim(Test)">
+            <SubjectData SubjectKey="SUBJ-001" />
+            <SubjectData SubjectKey="SUBJ-002" />
+          </ClinicalData>
+        </ODM>
+  
+  datasets:
+    - endpoint: GET /RaveWebServices/studies/{project}({env})/datasets/regular
+      description: Get all clinical data for study
+      auth_required: true
+      response_type: application/xml
+      response_structure: Full ODM with clinical data
+    
+    - endpoint: GET /RaveWebServices/studies/{project}({env})/subjects/{key}/datasets/regular
+      description: Get clinical data for specific subject
+      auth_required: true
+      response_type: application/xml
+      response_structure: ODM filtered to subject
+
+authentication:
+  method: HTTP Basic Authentication
+  header: "Authorization: Basic {base64(username:password)}"
+  configuration:
+    default_users:
+      - username: testuser
+        password: testpass
+      - username: admin
+        password: admin123
+  
+  implementation:
+    - Use @fastify/basic-auth plugin
+    - Apply to all /RaveWebServices/* routes except /version and /twohundred
+    - Return 401 with WWW-Authenticate header on failure
+    - Support configuration of users in study.config.yaml
+
+migration_strategy:
+  clean_rws_implementation:
+    - Remove all /api/* endpoints
+    - Remove old JSON response formats
+    - All endpoints return ODM XML
+    - Single, focused RWS API
+  
+  data_access:
+    - InMemoryStorage stores ODM-native structures
+    - All routes use ODM directly
+    - No transformation layer needed
+  
+  testing:
+    - All tests rewritten for RWS endpoints
+    - Remove old JSON API tests
+    - New RWS test suite
+  
+  configuration:
+    - study.config.yaml uses RWS format exclusively
+    - ProjectName(Environment) naming
+    - RWS authentication settings
+
+validation_criteria:
+  functional:
+    - All RWS endpoints respond correctly
+    - XML validates against ODM 1.3 schema
+    - Authentication works properly
+    - Study name parsing handles edge cases
+    - Data generated in correct ODM structure
+  
+  non_functional:
+    - Response time <500ms for datasets
+    - Memory usage reasonable for large studies
+    - Test coverage >80%
+    - Clean, maintainable codebase
+  
+  compatibility:
+    - Can connect with Medidata.RWS.NET.Standard
+    - ClinicalStudiesRequest works
+    - StudySubjectsRequest works
+    - StudyDatasetRequest works
+    - SubjectDatasetRequest works
+
+risks_and_mitigations:
+  complexity:
+    risk: ODM XML structure is complex
+    mitigation: Start with minimal valid structure, iterate
+    priority: high
+  
+  authentication:
+    risk: Security implementation errors
+    mitigation: Use well-tested Fastify plugin, review carefully
+    priority: high
+  
+  backward_compatibility:
+    risk: N/A - Clean implementation, no backward compatibility needed
+    mitigation: N/A
+    priority: N/A
+  
+  performance:
+    risk: XML generation may be slow
+    mitigation: Profile and optimize, consider caching
+    priority: low
+  
+  scope_creep:
+    risk: RWS spec is extensive
+    mitigation: Focus on core endpoints first, iterate
+    priority: medium
+
+rollout_plan:
+  development:
+    - Create feature branch: feature/rws-compatibility
+    - Implement phases 1-6 sequentially
+    - Code review at end of each phase
+    - Merge to main when complete
+  
+  testing:
+    - Unit tests run on every commit
+    - Integration tests run before phase completion
+    - Manual testing with RWS client
+    - Performance testing on large datasets
+  
+  deployment:
+    - Tag as version 4.0.0
+    - Update documentation
+    - Provide migration guide
+    - Announce breaking changes if any
+
+success_metrics:
+  technical:
+    - All RWS endpoints functional: 100%
+    - Test coverage: >80%
+    - ODM validation: 100% valid
+    - Authentication: 100% functional
+    - Clean RWS-only implementation: Yes
+  
+  usability:
+    - Medidata.RWS.NET.Standard connection: Success
+    - Documentation completeness: 100%
+    - Example code provided: Yes
+  
+  quality:
+    - Code review: Passed
+    - No critical bugs: 0
+    - Performance acceptable: <500ms
+    - Memory leaks: 0
+
+notes:
+  - This is a significant architectural change
+  - Focus on core RWS endpoints first
+  - XML generation needs careful testing
+  - Authentication should be simple but secure
+  - Maintain clean separation of concerns
+  - Document as you go
+  - Test early and often
