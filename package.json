@@ -51,6 +51,7 @@
     },
     "testMatch": [
       "**/tests/**/*.test.ts"
-    ]
+    ],
+    "silent": true
   }
 }
