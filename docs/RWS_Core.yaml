@@ -1,0 +1,111 @@
+api_name: "Medidata Rave Web Services (RWS)"
+version: "2025.1.0"
+base_url: "https://{host}/RaveWebServices"
+auth:
+  type: "basic"
+  example_token: "Basic TEST_TOKEN"  # Simulated token for mock harness
+endpoints:
+
+  - path: "/studies/{study-oid}/datasets/metadata/regular"
+    method: GET
+    summary: "1.5.1.1 Retrieve Clinical Datasets Metadata as ODM"
+    parameters:
+      - { name: "study-oid", in: path, type: string, required: true, example: "Mediflex(Prod)" }
+      - { name: "versionitem", in: query, type: string, required: false, example: "v1" }
+      - { name: "decodesuffix", in: query, type: string, required: false, example: "_DECODE" }
+      - { name: "codelistsuffix", in: query, type: string, required: false, example: "_CL" }
+    responses:
+      200:
+        content_type: "application/xml"
+        example: |
+          <ODM FileType="Snapshot" ODMVersion="1.3">
+            <Study OID="Mediflex(Prod)">
+              <MetaDataVersion OID="2025-01-13T09:54:53Z">
+                <FormDef OID="DM" Name="Demographics"/>
+                <ItemDef OID="DM.SEX" Name="Sex" DataType="text"/>
+              </MetaDataVersion>
+            </Study>
+          </ODM>
+      401:
+        content_type: "application/xml"
+        example: |
+          <Response ReasonCode="RWS00008" ErrorClientResponseMessage="Unauthorized"/>
+      404:
+        content_type: "application/xml"
+        example: |
+          <Response ReasonCode="RWS00012" ErrorClientResponseMessage="Study OID not found"/>
+
+  - path: "/datasets/ClinicalAuditRecords.odm"
+    method: GET
+    summary: "1.5.3.4 Retrieve Clinical Data with the Clinical Audit Records Dataset"
+    parameters:
+      - { name: "studyoid", in: query, type: string, required: true, example: "Mediflex(Prod)" }
+      - { name: "startid", in: query, type: integer, required: false, example: 1000 }
+      - { name: "per_page", in: query, type: integer, required: false, example: 500 }
+      - { name: "unicode", in: query, type: boolean, required: false, example: true }
+      - { name: "mode", in: query, type: string, required: false, example: "full" }
+    responses:
+      200:
+        content_type: "application/xml"
+        example: |
+          <ODM FileType="Snapshot" ODMVersion="1.3">
+            <ClinicalData StudyOID="Mediflex(Prod)">
+              <AuditRecord ID="1001" User="raveuser" FieldOID="DM.SEX" OldValue="M" NewValue="F" DateTimeStamp="2025-10-18T14:21:03Z"/>
+            </ClinicalData>
+          </ODM>
+      404:
+        content_type: "application/xml"
+        example: |
+          <Response ReasonCode="RWS00012" ErrorClientResponseMessage="Study OID not found"/>
+
+  - path: "/studies/{study-oid}/Subjects"
+    method: GET
+    summary: "1.5.9 Retrieve the List of Subjects in a Study"
+    parameters:
+      - { name: "study-oid", in: path, type: string, required: true, example: "Mediflex(Prod)" }
+      - { name: "status", in: query, type: string, required: false, example: "all" }
+      - { name: "include", in: query, type: string, required: false, example: "inactiveAndDeleted" }
+    responses:
+      200:
+        content_type: "application/xml"
+        example: |
+          <Subjects>
+            <Subject SubjectKey="1001" Status="Active" SiteNumber="001"/>
+            <Subject SubjectKey="1002" Status="Inactive" SiteNumber="002"/>
+          </Subjects>
+      404:
+        content_type: "application/xml"
+        example: |
+          <Response ReasonCode="RWS00013" ErrorClientResponseMessage="No subjects found for study"/>
+      401:
+        content_type: "application/xml"
+        example: |
+          <Response ReasonCode="RWS00008" ErrorClientResponseMessage="Unauthorized"/>
+
+instructions:
+  goal: "Generate a mock/test API harness."
+  framework: "Node.js (TypeScript, Fastify)"
+  rules:
+    - Mock all endpoints locally with static XML.
+    - Accept header 'Authorization: Basic TEST_TOKEN' to simulate Basic Auth.
+    - Return example payloads as XML with content-type 'application/xml'.
+    - Include 404 and 500 error routes returning RWS-style <Response/>.
+  output_files:
+    - src/index.ts
+    - src/utils/auth.ts
+    - src/utils/errors.ts
+    - src/utils/file.ts
+    - mockData/metadata.xml
+    - mockData/auditRecords.xml
+    - mockData/subjects.xml
+    - tests/unit/auth.test.ts
+    - tests/unit/errors.test.ts
+    - tests/unit/file.test.ts
+    - RWS_Core.yaml
+    - README.md
+
+mapping:
+  error_responses:
+    401: { message: "Unauthorized — invalid or missing credentials" }
+    404: { message: "Not found — study or dataset unavailable" }
+    500: { message: "Internal test error — mock server fault" }
