@@ -1,4 +1,4 @@
-name: RWS Core Mock CI
+name: rave-maker CI
 
 on:
   push:
