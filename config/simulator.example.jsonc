@@ -1,0 +1,77 @@
+// Copy this file to config/simulator.json and edit values as needed.
+// Note: JSONC (comments) is for documentation only; the app requires plain JSON.
+// Remove comments before using as simulator.json, or use the plain example in README.
+{
+  // Use "simulator" to enable dynamic data; "mock" serves static mockData/*.xml
+  "dataMode": "simulator",
+
+  "study": {
+    // Default Study OID used by the simulator
+    "oid": "Mediflex(Prod)",
+    // Auto-tick interval in milliseconds (0 disables auto ticking)
+    "interval_ms": 1500,
+    // Percent of subjects processed per tick (0–100)
+    "batch_percentage": 25,
+    // Time acceleration multiplier for timestamps
+    "speed_factor": 1.0
+  },
+
+  "auth": {
+    // Expected Authorization header value
+    "basic_token": "Basic TEST_TOKEN"
+  },
+
+  "structure": {
+    // Number of sites and subjects per site
+    "sites": 2,
+    "subjects_per_site": 3,
+    // Percent progress added to each processed subject per tick
+    "progress_increment": 10,
+    // Optional friendly names for sites; appears as SiteName in Subjects XML
+    "site_names": ["Alpha Site", "Beta Site"]
+  },
+
+  "logging": {
+    // High-level simulator logs (initialization, ticks)
+    "simulator": true,
+    // Generator logs per tick (data creation summaries)
+    "generator": true
+  },
+
+  "visits": {
+    // Define the visit sequence and the forms produced at each visit
+    "templates": [
+      { "name": "Demographics", "day_offset": 0,  "forms": [ { "oid": "DM", "name": "Demographics" } ] },
+      { "name": "Visit 1",     "day_offset": 14, "forms": [ { "oid": "VS", "name": "Vitals" } ] },
+      { "name": "Visit 2",     "day_offset": 28, "forms": [ { "oid": "LB", "name": "Labs" } ] }
+    ],
+    // Optional: specify equal gaps between visits; loader normalizes into day_offset
+    "days_between": 14,
+    // Outcome probabilities per visited subject on each tick
+    "probabilities": { "delayed": 0.2, "missed": 0.1, "partial": 0.15 },
+    // Delay window (ms) when a visit outcome is Delayed
+    "delay_ms": { "min": 3600000, "max": 172800000 }
+  },
+
+  "audit": {
+    // Username placed on generated AuditRecord entries
+    "user": "raveuser",
+    // Fields to generate changes for
+    "field_oids": ["DM.SEX", "VS.HR", "LB.WBC"],
+    // Default per_page size for ClinicalAuditRecords (when per_page is not provided)
+    "per_page_default": 500
+  },
+
+  "values": {
+    // Value generation rules per FieldOID
+    "rules": {
+      // Enum cycles through the provided values
+      "DM.SEX": { "type": "enum", "enum": ["M","F"] },
+      // Numbers pick a random integer in range (tries to avoid immediate repeats)
+      "VS.HR": { "type": "number", "range": { "min": 55, "max": 110 } },
+      "LB.WBC": { "type": "number", "range": { "min": 3, "max": 12 } }
+      // For strings, use a pattern with {n} placeholder to increment
+      // "DM.SUBJ": { "type": "string", "pattern": "SUBJ-{n}" }
+    }
+  }
+}

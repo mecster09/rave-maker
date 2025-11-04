@@ -1,0 +1,45 @@
+{
+  "dataMode": "mock",
+  "study": {
+    "oid": "Mediflex(Prod)",
+    "interval_ms": 0,
+    "batch_percentage": 25,
+    "speed_factor": 1.0
+  },
+  "auth": {
+    "basic_token": "Basic TEST_TOKEN"
+  },
+  "structure": {
+    "sites": 2,
+    "subjects_per_site": 3,
+    "progress_increment": 10,
+    "site_names": ["Alpha Site", "Beta Site"]
+  },
+  "logging": {
+    "simulator": false,
+    "generator": false
+  },
+  "visits": {
+    "templates": [
+      { "name": "Demographics", "day_offset": 0,  "forms": [ { "oid": "DM", "name": "Demographics" } ] },
+      { "name": "Visit 1",     "day_offset": 14, "forms": [ { "oid": "VS", "name": "Vitals" } ] },
+      { "name": "Visit 2",     "day_offset": 28, "forms": [ { "oid": "LB", "name": "Labs" } ] }
+    ],
+    "days_between": 14,
+    "probabilities": { "delayed": 0.2, "missed": 0.1, "partial": 0.15 },
+    "delay_ms": { "min": 3600000, "max": 172800000 }
+  },
+  "audit": {
+    "user": "raveuser",
+    "field_oids": ["DM.SEX", "VS.HR", "LB.WBC"],
+    "per_page_default": 500
+  }
+  ,
+  "values": {
+    "rules": {
+      "DM.SEX": { "type": "enum", "enum": ["M","F"] },
+      "VS.HR": { "type": "number", "range": { "min": 55, "max": 110 } },
+      "LB.WBC": { "type": "number", "range": { "min": 3, "max": 12 } }
+    }
+  }
+}

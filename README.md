@@ -42,6 +42,93 @@ npm run dev
 npm test
 ```
 
+## Configuration: Mock vs Simulator
+
+The server can serve data from static XML in `mockData/` (default) or from a ticking simulator that generates clinical data progressively over time.
+
+- Config file: `config/simulator.json`
+- Environment override: set `DATA_MODE=mock` or `DATA_MODE=simulator`
+
+Example `config/simulator.json` (extended):
+```json
+{
+  "dataMode": "simulator",
+  "study": { "oid": "Mediflex(Prod)", "interval_ms": 1500, "batch_percentage": 25, "speed_factor": 1.0 },
+  "auth": { "basic_token": "Basic TEST_TOKEN" },
+  "structure": { "sites": 2, "subjects_per_site": 3, "progress_increment": 10 },
+  "logging": { "simulator": true, "generator": true },
+  "visits": {
+    "templates": [
+      { "name": "Demographics", "day_offset": 0,  "forms": [ { "oid": "DM", "name": "Demographics" } ] },
+      { "name": "Visit 1",     "day_offset": 14, "forms": [ { "oid": "VS", "name": "Vitals" } ] }
+    ],
+    "probabilities": { "delayed": 0.2, "missed": 0.1, "partial": 0.15 },
+    "delay_ms": { "min": 3600000, "max": 172800000 }
+  },
+  "audit": { "user": "raveuser", "field_oids": ["DM.SEX","VS.HR"], "per_page_default": 500 }
+}
+```
+
+When `dataMode` is `simulator`:
+- `GET /RaveWebServices/studies/{study-oid}/Subjects` returns generated subjects.
+- `GET /RaveWebServices/datasets/ClinicalAuditRecords.odm` returns generated audit records (supports `startid` and `per_page`).
+- Control endpoints (XML):
+  - `POST /simulator/tick` advance one tick
+  - `POST /simulator/control/{pause|resume|reset|tick}`
+  - `GET /simulator/status` simulator status
+
+Simulator behavior
+- Auto vs manual: `study.interval_ms` controls auto-ticking (0 disables).
+- Batch: `study.batch_percentage` controls subjects processed per tick.
+- Time: `study.speed_factor` accelerates timestamps.
+- Visits: define `visits.templates` with forms; probabilities `delayed|missed|partial` control outcomes. Delays use `visits.delay_ms` range.
+- Subjects/XML: simulator adds `CurrentVisit`, `VisitStatus`, and optional `DelayedUntil` attributes.
+- Metadata/XML: simulator’s metadata reflects configured forms when simulator mode is enabled.
+
+### Simulator Options (Overview)
+- study
+  - `oid`: default Study OID used by the simulator when needed.
+  - `interval_ms`: auto tick interval; set `0` for manual.
+  - `batch_percentage`: percent of subjects processed per tick (0–100).
+  - `speed_factor`: time multiplier for timestamps (1.0 = real-time).
+- auth
+  - `basic_token`: expected `Authorization` header (e.g., `Basic TEST_TOKEN`).
+- structure
+  - `sites`: number of sites.
+  - `subjects_per_site`: subjects per site.
+  - `progress_increment`: percent progress added per tick.
+  - `site_names`: optional array of friendly site names (used in Subjects XML as `SiteName`).
+- logging
+  - `simulator`: enable high-level simulator logs.
+  - `generator`: enable generator logs per tick.
+- visits
+  - `templates`: ordered list of visits with `name`, `day_offset` (from Day 0), and `forms`.
+  - `days_between`: convenience gaps; the loader normalizes this into `templates[].day_offset`.
+  - `probabilities`: control outcomes `{ delayed, missed, partial }` (0–1 each).
+  - `delay_ms`: `{ min, max }` delay window applied when `delayed` occurs.
+- audit
+  - `user`: username placed on generated `<AuditRecord/>` rows.
+  - `field_oids`: list of field OIDs to generate changes for.
+  - `per_page_default`: default page size when `per_page` query is omitted.
+- values
+  - `rules`: per-field generation rules:
+    - `type`: `enum` | `number` | `string`
+    - `enum`: cycles through values
+    - `range`: `{ min, max }` random int in range
+    - `pattern`: string with `{n}` placeholder for incrementing sequences
+
+Minimal simulator config (quick start):
+```json
+{
+  "dataMode": "simulator",
+  "structure": { "sites": 1, "subjects_per_site": 3 },
+  "visits": { "templates": [ { "name": "Demographics", "day_offset": 0, "forms": [ { "oid": "DM", "name": "Demographics" } ] } ] }
+}
+```
+
+Commented example
+- JSON does not support comments; see `config/simulator.example.jsonc` for a commented template you can copy to `config/simulator.json` and edit.
+
 ## Docker
 ```bash
 docker build -t rave-maker .

@@ -1,7 +1,11 @@
-export function ensureAuthorized(authHeader?: string | string[]): boolean {
+export function ensureAuthorized(
+  authHeader?: string | string[],
+  expected: string = 'Basic TEST_TOKEN',
+): boolean {
   if (!authHeader) return false;
+  const match = (h: string) => h.trim() === expected;
   if (Array.isArray(authHeader)) {
-    return authHeader.some(h => typeof h === 'string' && h.trim() === 'Basic TEST_TOKEN');
+    return authHeader.some(h => typeof h === 'string' && match(h));
   }
-  return authHeader.trim() === 'Basic TEST_TOKEN';
+  return match(authHeader);
 }
