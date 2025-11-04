@@ -1,0 +1,5 @@
+<ODM FileType="Snapshot" ODMVersion="1.3">
+  <ClinicalData StudyOID="Mediflex(Prod)">
+    <AuditRecord ID="1001" User="raveuser" FieldOID="DM.SEX" OldValue="M" NewValue="F" DateTimeStamp="2025-10-18T14:21:03Z"/>
+  </ClinicalData>
+</ODM>

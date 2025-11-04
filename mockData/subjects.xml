@@ -1,0 +1,4 @@
+<Subjects>
+  <Subject SubjectKey="1001" Status="Active" SiteNumber="001"/>
+  <Subject SubjectKey="1002" Status="Inactive" SiteNumber="002"/>
+</Subjects>

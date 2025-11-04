@@ -1,0 +1,8 @@
+<ODM FileType="Snapshot" ODMVersion="1.3">
+  <Study OID="Mediflex(Prod)">
+    <MetaDataVersion OID="2025-01-13T09:54:53Z">
+      <FormDef OID="DM" Name="Demographics"/>
+      <ItemDef OID="DM.SEX" Name="Sex" DataType="text"/>
+    </MetaDataVersion>
+  </Study>
+</ODM>
