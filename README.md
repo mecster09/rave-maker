@@ -1,4 +1,4 @@
-# 🧩 Rave-Maker
+# 🧩 Rave-Maker [![rave-maker CI](https://github.com/mecster09/rave-maker/actions/workflows/ci.yml/badge.svg)](https://github.com/mecster09/rave-maker/actions/workflows/ci.yml)
 
 This project simulates the **Medidata Rave Web Services (RWS)** API with **strict XML** outputs, implemented in **Fastify + TypeScript**.  
 It supports AI training, integration testing, and developer sandboxing aligned to RWS documentation sections 1.1.2, 1.5.x, and 1.7.x.
