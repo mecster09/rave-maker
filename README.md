@@ -32,7 +32,6 @@ mockData/         # Static XML files
 tests/unit/       # Vitest unit tests
 .github/workflows/ci.yml  # GitHub Actions CI pipeline
 Dockerfile        # Build & run container
-RWS_Core.yaml     # Normalized YAML specification
 README.md
 ```
 
@@ -45,8 +44,8 @@ npm test
 
 ## Docker
 ```bash
-docker build -t rws-core-mock .
-docker run -p 3000:3000 rws-core-mock
+docker build -t rave-maker .
+docker run -p 3000:3000 rave-maker
 ```
 
 ## GitHub Actions
