@@ -2,7 +2,7 @@ import Fastify from 'fastify';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { ensureAuthorized } from './utils/auth.js';
+import { ensureAuthorized, DEFAULT_BASIC_TOKEN } from './utils/auth.js';
 import { rwsError } from './utils/errors.js';
 import { readXml } from './utils/file.js';
 import { loadConfig } from './utils/config.js';
@@ -14,6 +14,12 @@ const mockRoot = path.resolve(__dirname, '..', '..', 'mockData');
 const config = loadConfig(__dirname);
 const studyOidDefault = config.study.oid || 'Mediflex(Prod)';
 const useSim = config.dataMode === 'simulator';
+const persistenceStateFile = path.resolve(
+  __dirname,
+  '..',
+  '..',
+  config.persistence?.state_file ?? 'data/simulator-state.json',
+);
 const simulator = useSim
   ? new RwsSimulator(studyOidDefault, {
       intervalMs: Math.max(0, Number(config.study.interval_ms || 0)),
@@ -36,6 +42,9 @@ const simulator = useSim
         perPageDefault: config.audit?.per_page_default,
       },
       valueRules: config.values?.rules,
+      persistState: config.persistence?.enabled !== false,
+      statePersistencePath: persistenceStateFile,
+      freshSeedOnStart: !!config.persistence?.fresh_seed_on_start,
     })
   : undefined;
 
@@ -43,7 +52,7 @@ const fastify = Fastify({ logger: false });
 
 // Global auth preHandler
 fastify.addHook('preHandler', (req, reply, done) => {
-  const expected = config.auth?.basic_token || 'Basic TEST_TOKEN';
+  const expected = config.auth?.basic_token || DEFAULT_BASIC_TOKEN;
   const ok = ensureAuthorized(req.headers['authorization'], expected);
   if (!ok) {
     reply.type('application/xml').code(401)
@@ -154,5 +163,5 @@ fastify.setErrorHandler((error, req, reply) => {
 
 const port = process.env.PORT ? Number(process.env.PORT) : 3000;
 fastify.listen({ port, host: '0.0.0.0' })
-  .then(() => console.log(`RWS mock listening on :${port}`))
+  .then(() => console.log(`rave-maker mock listening on :${port}`))
   .catch(err => { console.error(err); process.exit(1); });

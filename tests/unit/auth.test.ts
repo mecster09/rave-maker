@@ -6,12 +6,12 @@ describe('ensureAuthorized', () => {
     expect(ensureAuthorized(undefined)).toBe(false);
   });
   it('accepts correct token', () => {
-    expect(ensureAuthorized('Basic TEST_TOKEN')).toBe(true);
+    expect(ensureAuthorized('Basic VEVTVF9VU0VSOlRFU1RfUEFTU1dPUkQ=')).toBe(true);
   });
   it('rejects other tokens', () => {
     expect(ensureAuthorized('Basic XYZ')).toBe(false);
   });
   it('handles array header', () => {
-    expect(ensureAuthorized(['Basic XYZ', 'Basic TEST_TOKEN'])).toBe(true);
+    expect(ensureAuthorized(['Basic XYZ', 'Basic VEVTVF9VU0VSOlRFU1RfUEFTU1dPUkQ='])).toBe(true);
   });
 });

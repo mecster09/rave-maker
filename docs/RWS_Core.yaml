@@ -3,7 +3,7 @@ version: "2025.1.0"
 base_url: "https://{host}/RaveWebServices"
 auth:
   type: "basic"
-  example_token: "Basic TEST_TOKEN"  # Simulated token for mock harness
+  example_token: "Basic VEVTVF9VU0VSOlRFU1RfUEFTU1dPUkQ="  # Derived from TEST_USER:TEST_PASSWORD
 endpoints:
 
   - path: "/studies/{study-oid}/datasets/metadata/regular"
@@ -81,28 +81,6 @@ endpoints:
         content_type: "application/xml"
         example: |
           <Response ReasonCode="RWS00008" ErrorClientResponseMessage="Unauthorized"/>
-
-instructions:
-  goal: "Generate a mock/test API harness."
-  framework: "Node.js (TypeScript, Fastify)"
-  rules:
-    - Mock all endpoints locally with static XML.
-    - Accept header 'Authorization: Basic TEST_TOKEN' to simulate Basic Auth.
-    - Return example payloads as XML with content-type 'application/xml'.
-    - Include 404 and 500 error routes returning RWS-style <Response/>.
-  output_files:
-    - src/index.ts
-    - src/utils/auth.ts
-    - src/utils/errors.ts
-    - src/utils/file.ts
-    - mockData/metadata.xml
-    - mockData/auditRecords.xml
-    - mockData/subjects.xml
-    - tests/unit/auth.test.ts
-    - tests/unit/errors.test.ts
-    - tests/unit/file.test.ts
-    - RWS_Core.yaml
-    - README.md
 
 mapping:
   error_responses:

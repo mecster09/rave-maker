@@ -23,7 +23,7 @@ Authoritative instructions for AI agents and contributors working in this reposi
 - Mock payloads live in `mockData/*.xml`. Prefer static files over inline strings.
 
 ## Auth & Errors
-- Auth header must be exactly `Authorization: Basic TEST_TOKEN`.
+- Auth header must be exactly `Authorization: Basic VEVTVF9VU0VSOlRFU1RfUEFTU1dPUkQ=` (derived from `TEST_USER:TEST_PASSWORD`).
 - Unauth: return `401` with `<Response ReasonCode="RWS00008" ErrorClientResponseMessage="Unauthorized"/>`.
 - 404 fallback: use Fastify notFound handler returning RWS-style `<Response/>` (see `src/index.ts:41`).
 - 500 errors: use `rwsError('RWS00100', message)` in the error handler and per-route catches.

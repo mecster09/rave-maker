@@ -17,8 +17,18 @@
   },
 
   "auth": {
-    // Expected Authorization header value
-    "basic_token": "Basic TEST_TOKEN"
+    // Credentials combined into a Basic token (username:password -> base64)
+    "username": "TEST_USER",
+    "password": "TEST_PASSWORD"
+  },
+
+  "persistence": {
+    // Persist simulator state between restarts (set to false to disable)
+    "enabled": true,
+    // File path (relative to project root) used to store simulator state
+    "state_file": "data/simulator-state.json",
+    // When true, ignore any saved state and reseed on next start
+    "fresh_seed_on_start": false
   },
 
   "structure": {

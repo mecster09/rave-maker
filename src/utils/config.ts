@@ -12,7 +12,14 @@ export interface SimulatorConfig {
     speed_factor: number; // time multiplier for timestamps
   };
   auth?: {
-    basic_token?: string; // expected Authorization header value
+    username?: string; // raw username used for Basic auth
+    password?: string; // raw password used for Basic auth
+    basic_token?: string; // derived Authorization header value
+  };
+  persistence?: {
+    enabled?: boolean;
+    state_file?: string;
+    fresh_seed_on_start?: boolean;
   };
   structure: {
     sites: number;
@@ -53,7 +60,8 @@ export interface SimulatorConfig {
 const defaultConfig: SimulatorConfig = {
   dataMode: 'mock',
   study: { oid: 'Mediflex(Prod)', interval_ms: 0, batch_percentage: 25, speed_factor: 1.0 },
-  auth: { basic_token: 'Basic TEST_TOKEN' },
+  auth: { username: 'TEST_USER', password: 'TEST_PASSWORD' },
+  persistence: { enabled: true, state_file: 'data/simulator-state.json', fresh_seed_on_start: false },
   structure: { sites: 1, subjects_per_site: 5, progress_increment: 10 },
   logging: { simulator: false, generator: false },
   visits: {
@@ -69,9 +77,17 @@ const defaultConfig: SimulatorConfig = {
   values: { rules: { 'DM.SEX': { type: 'enum', enum: ['M','F'] } } },
 };
 
+function deriveBasicToken(username?: string, password?: string): string | undefined {
+  if (typeof username !== 'string' || typeof password !== 'string') return undefined;
+  const credentials = `${username}:${password}`;
+  // Basic auth requires base64 of username:password using UTF-8
+  return `Basic ${Buffer.from(credentials, 'utf8').toString('base64')}`;
+}
+
 export function loadConfig(rootDir: string): SimulatorConfig {
   // Allow environment override
   const envMode = (process.env.DATA_MODE || process.env.SIM_MODE) as DataMode | undefined;
+  const isTestEnv = process.env.NODE_ENV === 'test' || process.env.VITEST === 'true';
   const configPath = path.resolve(rootDir, '..', 'config', 'simulator.json');
   let fileConfig: Partial<SimulatorConfig> = {};
   try {
@@ -87,6 +103,7 @@ export function loadConfig(rootDir: string): SimulatorConfig {
     structure: { ...defaultConfig.structure, ...(fileConfig.structure || {}) },
     logging: { ...defaultConfig.logging, ...(fileConfig.logging || {}) },
     auth: { ...defaultConfig.auth, ...(fileConfig.auth || {}) },
+    persistence: { ...defaultConfig.persistence, ...(fileConfig.persistence || {}) },
     visits: {
       ...defaultConfig.visits,
       ...(fileConfig.visits || {}),
@@ -96,8 +113,13 @@ export function loadConfig(rootDir: string): SimulatorConfig {
     audit: { ...defaultConfig.audit, ...(fileConfig.audit || {}) },
     values: { ...defaultConfig.values, ...(fileConfig.values || {}) },
   };
+  if (!merged.auth) merged.auth = {};
+  const derived = deriveBasicToken(merged.auth.username, merged.auth.password);
+  if (derived) merged.auth.basic_token = derived;
   if (envMode === 'mock' || envMode === 'simulator') {
     merged.dataMode = envMode;
+  } else if (isTestEnv) {
+    merged.dataMode = 'mock';
   }
   // Normalize visits.days_between into templates.day_offset if provided
   try {

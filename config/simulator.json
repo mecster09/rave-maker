@@ -1,23 +1,29 @@
 {
-  "dataMode": "mock",
+  "dataMode": "simulator",
   "study": {
     "oid": "Mediflex(Prod)",
-    "interval_ms": 0,
+    "interval_ms": 1500,
     "batch_percentage": 25,
     "speed_factor": 1.0
   },
   "auth": {
-    "basic_token": "Basic TEST_TOKEN"
+    "username": "TEST_USER",
+    "password": "TEST_PASSWORD"
+  },
+  "persistence": {
+    "enabled": true,
+    "state_file": "data/simulator-state.json",
+    "fresh_seed_on_start": false
   },
   "structure": {
     "sites": 2,
-    "subjects_per_site": 3,
+    "subjects_per_site": 10,
     "progress_increment": 10,
     "site_names": ["Alpha Site", "Beta Site"]
   },
   "logging": {
-    "simulator": false,
-    "generator": false
+    "simulator": true,
+    "generator": true
   },
   "visits": {
     "templates": [

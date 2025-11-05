@@ -33,16 +33,11 @@ endpoints:
         example: <JSON or XML snippet>
 instructions:
   goal: "Generate a mock/test API harness."
-  framework: "Node.js (TypeScript, Express or Fastify)"
   rules:
     - Mock all endpoints locally with static data.
-    - Accept a dummy token (e.g. 'TEST_TOKEN').
+    - Accept a dummy Basic credential (e.g. `TEST_USER:TEST_PASSWORD` → `Basic VEVTVF9VU0VSOlRFU1RfUEFTU1dPUkQ=`).
     - Return example payloads as JSON or XML as indicated.
     - Include 404 and 500 error routes.
-  output_files:
-    - index.ts
-    - mockData/
-    - README.md
 mapping:
   error_responses:
     404: { message: "Not found" }

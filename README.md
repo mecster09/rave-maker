@@ -12,8 +12,9 @@ Implements key RWS endpoints:
 All responses are **ODM v1.3 XML** and require Basic Auth with a fixed test token.
 
 ```
-Authorization: Basic TEST_TOKEN
+Authorization: Basic VEVTVF9VU0VSOlRFU1RfUEFTU1dPUkQ=
 ```
+Default credentials: `TEST_USER` / `TEST_PASSWORD` (combined as `Basic base64(username:password)`).
 
 ## Error Codes (from RWS §1.7.8)
 | HTTP | RWS Code | Meaning |
@@ -48,13 +49,15 @@ The server can serve data from static XML in `mockData/` (default) or from a tic
 
 - Config file: `config/simulator.json`
 - Environment override: set `DATA_MODE=mock` or `DATA_MODE=simulator`
+- Automated tests (`vitest`) always run in mock mode regardless of file settings
 
 Example `config/simulator.json` (extended):
 ```json
 {
   "dataMode": "simulator",
   "study": { "oid": "Mediflex(Prod)", "interval_ms": 1500, "batch_percentage": 25, "speed_factor": 1.0 },
-  "auth": { "basic_token": "Basic TEST_TOKEN" },
+  "auth": { "username": "TEST_USER", "password": "TEST_PASSWORD" },
+  "persistence": { "enabled": true, "state_file": "data/simulator-state.json", "fresh_seed_on_start": false },
   "structure": { "sites": 2, "subjects_per_site": 3, "progress_increment": 10 },
   "logging": { "simulator": true, "generator": true },
   "visits": {
@@ -83,7 +86,8 @@ Simulator behavior
 - Time: `study.speed_factor` accelerates timestamps.
 - Visits: define `visits.templates` with forms; probabilities `delayed|missed|partial` control outcomes. Delays use `visits.delay_ms` range.
 - Subjects/XML: simulator adds `CurrentVisit`, `VisitStatus`, and optional `DelayedUntil` attributes.
-- Metadata/XML: simulator’s metadata reflects configured forms when simulator mode is enabled.
+- Metadata/XML: simulator's metadata reflects configured forms when simulator mode is enabled.
+- Persistence: `persistence.enabled` keeps simulator state on disk; set `persistence.fresh_seed_on_start` to force a reseed on the next boot.
 
 ### Simulator Options (Overview)
 - study
@@ -92,7 +96,11 @@ Simulator behavior
   - `batch_percentage`: percent of subjects processed per tick (0–100).
   - `speed_factor`: time multiplier for timestamps (1.0 = real-time).
 - auth
-  - `basic_token`: expected `Authorization` header (e.g., `Basic TEST_TOKEN`).
+  - `username` / `password`: combined into the expected `Authorization` header (`Basic base64(username:password)`).
+- persistence
+  - `enabled`: toggle on-disk simulator state (defaults to true).
+  - `state_file`: path to the persisted JSON state (directories created automatically).
+  - `fresh_seed_on_start`: ignore saved state once and rebuild new subjects/visits.
 - structure
   - `sites`: number of sites.
   - `subjects_per_site`: subjects per site.
