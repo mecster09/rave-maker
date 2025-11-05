@@ -80,6 +80,14 @@ When `dataMode` is `simulator`:
   - `POST /simulator/control/{pause|resume|reset|tick}`
   - `GET /simulator/status` simulator status
 
+  - Example curls (use values from `config/simulator.json`):
+    - Metadata for `study.oid`:<br>`curl -u TEST_USER:TEST_PASSWORD "http://localhost:3000/RaveWebServices/studies/Mediflex(Prod)/datasets/metadata/regular"`
+    - Subjects feed:<br>`curl -u TEST_USER:TEST_PASSWORD "http://localhost:3000/RaveWebServices/studies/Mediflex(Prod)/Subjects"`
+    - Audit records (override `per_page`/`startid` as needed):<br>`curl -u TEST_USER:TEST_PASSWORD "http://localhost:3000/RaveWebServices/datasets/ClinicalAuditRecords.odm?per_page=5&startid=1"`
+   - Manual tick:<br>`curl -u TEST_USER:TEST_PASSWORD -X POST "http://localhost:3000/simulator/tick"`
+    - Pause/resume/reset:<br>`curl -u TEST_USER:TEST_PASSWORD -X POST "http://localhost:3000/simulator/control/pause"`
+    - Simulator status:<br>`curl -u TEST_USER:TEST_PASSWORD "http://localhost:3000/simulator/status"`
+
 Simulator behavior
 - Auto vs manual: `study.interval_ms` controls auto-ticking (0 disables).
 - Batch: `study.batch_percentage` controls subjects processed per tick.
