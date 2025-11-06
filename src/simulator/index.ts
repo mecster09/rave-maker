@@ -493,8 +493,10 @@ export class RwsSimulator {
         const fields = this.opts.audit?.fieldOids && this.opts.audit.fieldOids.length > 0
           ? this.opts.audit.fieldOids
           : ['DM.SEX'];
-        for (const f of subset) {
-          const field = fields[Math.floor(Math.random() * fields.length)];
+        for (const form of subset) {
+          const formFields = fields.filter(field => field.startsWith(`${form.oid}.`));
+          const fieldPool = formFields.length > 0 ? formFields : fields;
+          const field = fieldPool[Math.floor(Math.random() * fieldPool.length)];
           const oldV = subj.fieldValues[field] ?? this.initialValue(field);
           const newV = this.nextValue(field, oldV);
           this.audit.push({
