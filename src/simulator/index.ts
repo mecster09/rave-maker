@@ -24,6 +24,15 @@ export interface SimulatorOptions {
   };
   audit?: { user?: string; fieldOids?: string[]; perPageDefault?: number };
   valueRules?: Record<string, { type?: 'enum'|'number'|'string'; enum?: string[]; range?: { min: number; max: number }; pattern?: string }>;
+  service?: {
+    version?: string;
+    build_version?: string;
+    two_hundred_status?: string;
+    two_hundred_message?: string;
+    studies?: Array<{ oid: string; environment?: string }>;
+    cache_flush_response?: string;
+    post_clinical_data_response?: string;
+  };
 }
 
 type Subject = {
@@ -92,6 +101,13 @@ type SerializedStore = {
 type MaterializeOptions = {
   freshSeed?: boolean;
 };
+
+interface AuditXmlOptions {
+  studyOid?: string;
+  unicode?: 'Y' | 'N';
+  mode?: string;
+  formOid?: string;
+}
 
 const DATA_STORE_VERSION = 1;
 
@@ -523,7 +539,8 @@ export class RwsSimulator {
     ].join('\n');
   }
 
-  subjectsXml(): string {
+  subjectsXml(studyOidOverride?: string): string {
+    const studyOid = studyOidOverride ? String(studyOidOverride) : this.studyOid;
     const rows = this.subjects.map(s => {
       const plan = this.store.getVisitPlan(s.key);
       const planLength = plan.length;
@@ -536,8 +553,11 @@ export class RwsSimulator {
       const currentVisitName = planVisit?.name || fallbackVisit?.name || 'Visit';
       const attrs = [
         `SubjectKey="${escapeXml(s.key)}"`,
+        `SecondarySubjectID="${escapeXml(`SUBJ-${s.key}`)}"`,
         `Status="${escapeXml(s.status)}"`,
         `SiteNumber="${escapeXml(s.site)}"`,
+        `SiteOID="${escapeXml(`SITE${s.site}`)}"`,
+        `LocationOID="${escapeXml(`LOC${s.site}`)}"`,
         `Progress="${s.progress}"`,
         `CurrentVisit="${escapeXml(currentVisitName)}"`,
       ];
@@ -547,28 +567,46 @@ export class RwsSimulator {
       return `  <Subject ${attrs.join(' ')} />`;
     });
     return [
-      '<Subjects>',
+      `<Subjects StudyOID="${escapeXml(studyOid)}">`,
       ...rows,
       '</Subjects>'
     ].join('\n');
   }
 
-  auditXml(perPage = 500, startId = 1): string {
-    const items = this.audit.filter(a => a.id >= startId).slice(0, perPage);
+  auditXml(perPage = 500, startId = 1, options: AuditXmlOptions = {}): string {
+    const studyOid = options.studyOid ? String(options.studyOid) : this.studyOid;
+    const unicode = options.unicode === 'Y' ? 'Y' : 'N';
+    const mode = options.mode?.trim() ? options.mode : 'Full';
+    const formOid = options.formOid?.trim() ? options.formOid : undefined;
+    let items = this.audit.filter(a => a.id >= startId);
+    if (formOid) {
+      const prefix = `${formOid}.`;
+      items = items.filter(a => a.fieldOID.startsWith(prefix));
+    }
+    items = items.slice(0, Math.max(0, perPage));
     const rows = items.map(a =>
       `      <AuditRecord ID="${a.id}" User="${escapeXml(a.user)}" FieldOID="${escapeXml(a.fieldOID)}" OldValue="${escapeXml(a.oldValue)}" NewValue="${escapeXml(a.newValue)}" DateTimeStamp="${a.timestamp.toISOString()}"/>`
     );
+    const auditAttributes = [
+      `Mode="${escapeXml(mode)}"`,
+      `Unicode="${unicode}"`,
+    ];
+    if (formOid) {
+      auditAttributes.push(`FormOID="${escapeXml(formOid)}"`);
+    }
     return [
-      '<ODM FileType="Snapshot" ODMVersion="1.3">',
-      `  <ClinicalData StudyOID="${escapeXml(this.studyOid)}">`,
+      `<ODM xmlns="http://www.cdisc.org/ns/odm/v1.3" ODMVersion="1.3" FileType="Snapshot" CreationDateTime="${escapeXml(new Date().toISOString())}" SourceSystem="Rave Simulator">`,
+      `  <ClinicalData StudyOID="${escapeXml(studyOid)}">`,
+      `    <AuditRecords ${auditAttributes.join(' ')}>`,
       ...rows,
+      '    </AuditRecords>',
       '  </ClinicalData>',
       '</ODM>'
     ].join('\n');
   }
 
   metadataXml(studyOid?: string): string {
-    const ts = new Date().toISOString();
+    const createdAt = new Date().toISOString();
     const oid = studyOid || this.studyOid;
     const visitSummaries = this.store.getVisitSummaries();
     const visitDefs = visitSummaries.map(visit => {
@@ -591,9 +629,9 @@ export class RwsSimulator {
       '      <ItemDef OID="DM.SEX" Name="Sex" DataType="text"/>'
     ];
     return [
-      '<ODM FileType="Snapshot" ODMVersion="1.3">',
+      `<ODM xmlns="http://www.cdisc.org/ns/odm/v1.3" ODMVersion="1.3" FileType="Snapshot" CreationDateTime="${escapeXml(createdAt)}" SourceSystem="Rave Simulator">`,
       `  <Study OID="${escapeXml(oid)}">`,
-      `    <MetaDataVersion OID="${escapeXml(ts)}">`,
+      '    <MetaDataVersion OID="MDV.RAVE.SIM" Name="Simulator Metadata">',
       ...visitDefs,
       ...formDefs,
       ...itemDefs,
@@ -601,6 +639,66 @@ export class RwsSimulator {
       '  </Study>',
       '</ODM>'
     ].join('\n');
+  }
+
+  versionXml(): string {
+    const version = this.opts.service?.version || 'Rave Web Services Version 1.0.0';
+    return [
+      '<Response>',
+      `  <Version>${escapeXml(version)}</Version>`,
+      '</Response>',
+    ].join('\n');
+  }
+
+  buildVersionXml(): string {
+    const build = this.opts.service?.build_version || 'Build 2025.11.01';
+    return [
+      '<Response>',
+      `  <BuildVersion>${escapeXml(build)}</BuildVersion>`,
+      '</Response>',
+    ].join('\n');
+  }
+
+  twoHundredXml(): string {
+    const status = this.opts.service?.two_hundred_status || '200';
+    const message = this.opts.service?.two_hundred_message || 'TwoHundred OK';
+    return [
+      '<Response>',
+      `  <Status>${escapeXml(status)}</Status>`,
+      `  <Message>${escapeXml(message)}</Message>`,
+      '</Response>',
+    ].join('\n');
+  }
+
+  studiesXml(): string {
+    const studies = this.resolveStudies();
+    const rows = studies.map(study => {
+      const attrs = [`OID="${escapeXml(study.oid)}"`];
+      if (study.environment) attrs.push(`Environment="${escapeXml(study.environment)}"`);
+      return `    <Study ${attrs.join(' ')} />`;
+    });
+    return [
+      '<ODM>',
+      '  <Studies>',
+      ...rows,
+      '  </Studies>',
+      '</ODM>',
+    ].join('\n');
+  }
+
+  cacheFlushXml(): string {
+    const xml = this.opts.service?.cache_flush_response;
+    const resolved = (typeof xml === 'string' && xml.trim().length > 0) ? xml.trim() : '<Success/>';
+    return resolved;
+  }
+
+  postClinicalDataResponse(payload: string): string {
+    this.log(`Received ODM clinical data payload length=${payload.length}`);
+    const xml = this.opts.service?.post_clinical_data_response;
+    const resolved = (typeof xml === 'string' && xml.trim().length > 0)
+      ? xml
+      : '<ODM>\n  <Success/>\n</ODM>';
+    return resolved;
   }
 
   private initialValue(fieldOID: string): string {
@@ -630,5 +728,24 @@ export class RwsSimulator {
     }
     if (fieldOID === 'DM.SEX') return prev === 'M' ? 'F' : 'M';
     return prev === '1' ? '0' : '1';
+  }
+
+  private resolveStudies(): Array<{ oid: string; environment?: string }> {
+    const configured = this.opts.service?.studies;
+    if (configured && configured.length > 0) {
+      return configured
+        .map(study => ({
+          oid: study.oid,
+          environment: study.environment,
+        }))
+        .filter(study => typeof study.oid === 'string' && study.oid.trim().length > 0);
+    }
+    const environment = this.extractEnvironmentFromOid(this.studyOid);
+    return [{ oid: this.studyOid, environment }];
+  }
+
+  private extractEnvironmentFromOid(oid: string): string | undefined {
+    const match = /\(([^)]+)\)\s*$/.exec(oid);
+    return match ? match[1] : undefined;
   }
 }

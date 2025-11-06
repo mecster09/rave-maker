@@ -1,0 +1,6 @@
+<ODM>
+  <Studies>
+    <Study OID="Mediflex" Environment="Prod"/>
+    <Study OID="Mediflex_UAT" Environment="UAT"/>
+  </Studies>
+</ODM>

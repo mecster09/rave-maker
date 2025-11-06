@@ -105,4 +105,23 @@ describe('config loader', () => {
       fixture.cleanup();
     }
   });
+
+  it('synthesizes service defaults when studies list is missing', () => {
+    const fixture = createTempRoot({
+      study: { oid: 'StudyX(QA)' },
+      service: { version: 'CustomVersion', studies: [] },
+    });
+
+    try {
+      const cfg = loadConfig(fixture.root);
+      expect(cfg.service?.version).toBe('CustomVersion');
+      expect(cfg.service?.build_version).toBeDefined();
+      expect(cfg.service?.studies?.length).toBeGreaterThan(0);
+      expect(cfg.service?.studies?.[0]?.oid).toBeDefined();
+      expect(cfg.service?.cache_flush_response).toBeDefined();
+      expect(cfg.service?.post_clinical_data_response).toBeDefined();
+    } finally {
+      fixture.cleanup();
+    }
+  });
 });

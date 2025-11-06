@@ -55,6 +55,15 @@ export interface SimulatorConfig {
       pattern?: string;
     }>;
   };
+  service?: {
+    version?: string;
+    build_version?: string;
+    two_hundred_status?: string;
+    two_hundred_message?: string;
+    studies?: Array<{ oid: string; environment?: string }>;
+    cache_flush_response?: string;
+    post_clinical_data_response?: string;
+  };
 }
 
 const defaultConfig: SimulatorConfig = {
@@ -75,6 +84,18 @@ const defaultConfig: SimulatorConfig = {
   },
   audit: { user: 'raveuser', field_oids: ['DM.SEX'], per_page_default: 500 },
   values: { rules: { 'DM.SEX': { type: 'enum', enum: ['M','F'] } } },
+  service: {
+    version: 'Rave Web Services Version 1.0.0',
+    build_version: 'Build 2025.11.01',
+    two_hundred_status: '200',
+    two_hundred_message: 'TwoHundred OK',
+    studies: [
+      { oid: 'Mediflex(Prod)', environment: 'Prod' },
+      { oid: 'Mediflex_UAT', environment: 'UAT' },
+    ],
+    cache_flush_response: '<Success/>',
+    post_clinical_data_response: '<ODM><Success/></ODM>',
+  },
 };
 
 function deriveBasicToken(username?: string, password?: string): string | undefined {
@@ -112,6 +133,7 @@ export function loadConfig(rootDir: string): SimulatorConfig {
     },
     audit: { ...defaultConfig.audit, ...(fileConfig.audit || {}) },
     values: { ...defaultConfig.values, ...(fileConfig.values || {}) },
+    service: { ...defaultConfig.service, ...(fileConfig.service || {}) },
   };
   if (!merged.auth) merged.auth = {};
   const derived = deriveBasicToken(merged.auth.username, merged.auth.password);
@@ -120,6 +142,23 @@ export function loadConfig(rootDir: string): SimulatorConfig {
     merged.dataMode = envMode;
   } else if (isTestEnv) {
     merged.dataMode = 'mock';
+  }
+  if (!merged.service) merged.service = {};
+  const defaultStudies = defaultConfig.service?.studies ?? [];
+  const fileStudies = fileConfig.service?.studies;
+  const studiesSource = (fileStudies && fileStudies.length > 0) ? fileStudies : defaultStudies;
+  merged.service.studies = studiesSource.map(study => ({ ...study }));
+  if (!merged.service.version) merged.service.version = defaultConfig.service?.version;
+  if (!merged.service.build_version) merged.service.build_version = defaultConfig.service?.build_version;
+  if (!merged.service.two_hundred_status) merged.service.two_hundred_status = defaultConfig.service?.two_hundred_status;
+  if (!merged.service.two_hundred_message) merged.service.two_hundred_message = defaultConfig.service?.two_hundred_message;
+  if (!merged.service.cache_flush_response) merged.service.cache_flush_response = defaultConfig.service?.cache_flush_response;
+  if (!merged.service.post_clinical_data_response) merged.service.post_clinical_data_response = defaultConfig.service?.post_clinical_data_response;
+  if (!merged.service.studies || merged.service.studies.length === 0) {
+    const baseOid = merged.study.oid || 'Mediflex(Prod)';
+    const match = /\(([^)]+)\)\s*$/.exec(baseOid);
+    const environment = match ? match[1] : 'Prod';
+    merged.service.studies = [{ oid: baseOid, environment }];
   }
   // Normalize visits.days_between into templates.day_offset if provided
   try {

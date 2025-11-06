@@ -1,6 +1,6 @@
-<ODM FileType="Snapshot" ODMVersion="1.3">
+<ODM xmlns="http://www.cdisc.org/ns/odm/v1.3" ODMVersion="1.3" FileType="Snapshot" CreationDateTime="2025-01-13T09:54:53Z" SourceSystem="Rave Mock">
   <Study OID="Mediflex(Prod)">
-    <MetaDataVersion OID="2025-01-13T09:54:53Z">
+    <MetaDataVersion OID="MDV.RAVE.01" Name="Production Metadata">
       <FormDef OID="DM" Name="Demographics"/>
       <ItemDef OID="DM.SEX" Name="Sex" DataType="text"/>
     </MetaDataVersion>

@@ -1,4 +1,4 @@
-<Subjects>
-  <Subject SubjectKey="1001" Status="Active" SiteNumber="001"/>
-  <Subject SubjectKey="1002" Status="Inactive" SiteNumber="002"/>
+<Subjects StudyOID="Mediflex(Prod)">
+  <Subject SubjectKey="1001" SecondarySubjectID="SUBJ-1001" LocationOID="LOC001" SiteOID="SITE001" SiteNumber="001" SiteName="Main Site" Status="Active"/>
+  <Subject SubjectKey="1002" SecondarySubjectID="SUBJ-1002" LocationOID="LOC002" SiteOID="SITE002" SiteNumber="002" SiteName="Satellite Site" Status="Inactive"/>
 </Subjects>

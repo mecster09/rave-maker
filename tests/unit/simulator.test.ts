@@ -22,6 +22,64 @@ describe('RwsSimulator', () => {
     expect(audits.trim().startsWith('<')).toBe(true);
   });
 
+  it('renders service metadata XML from options', () => {
+    const sim = new RwsSimulator('Mediflex(Prod)', {
+      intervalMs: 0,
+      batchPercentage: 100,
+      speedFactor: 1.0,
+      sites: 1,
+      subjectsPerSite: 1,
+      logging: false,
+      service: {
+        version: 'Custom Version 9.9.9',
+        build_version: 'Build Custom 123',
+        two_hundred_status: '201',
+        two_hundred_message: 'Partial OK',
+        studies: [
+          { oid: 'StudyOne(Prod)', environment: 'Prod' },
+          { oid: 'StudyTwo(UAT)', environment: 'UAT' },
+        ],
+        cache_flush_response: '<Success Code="OK"/>',
+        post_clinical_data_response: '<ODM><Ack/></ODM>',
+      },
+    });
+
+    expect(sim.versionXml()).toContain('Custom Version 9.9.9');
+    expect(sim.buildVersionXml()).toContain('Build Custom 123');
+    const twoHundred = sim.twoHundredXml();
+    expect(twoHundred).toContain('<Status>201</Status>');
+    expect(twoHundred).toContain('<Message>Partial OK</Message>');
+    const studiesXml = sim.studiesXml();
+    expect(studiesXml).toContain('StudyOne(Prod)');
+    expect(studiesXml).toContain('StudyTwo(UAT)');
+    expect(sim.cacheFlushXml()).toBe('<Success Code="OK"/>');
+    expect(sim.postClinicalDataResponse('<ODM/>')).toContain('<Ack/>');
+  });
+
+  it('falls back to derived study metadata when service section missing studies', () => {
+    const sim = new RwsSimulator('StudyAlpha(QA)', {
+      intervalMs: 0,
+      batchPercentage: 100,
+      speedFactor: 1.0,
+      sites: 1,
+      subjectsPerSite: 1,
+      logging: false,
+      service: {
+        version: 'V1',
+        build_version: 'B1',
+        studies: [],
+        cache_flush_response: '',
+        post_clinical_data_response: '',
+      },
+    });
+
+    const studies = sim.studiesXml();
+    expect(studies).toContain('StudyAlpha(QA)');
+    expect(studies).toContain('Environment="QA"');
+    expect(sim.cacheFlushXml()).toBe('<Success/>');
+    expect(sim.postClinicalDataResponse('   ')).toContain('<Success/>');
+  });
+
   it('produces metadata XML that reflects study OID', () => {
     const sim = new RwsSimulator('Mediflex(Prod)', {
       intervalMs: 0,
@@ -201,14 +259,14 @@ describe('RwsSimulator', () => {
     const delayedSubjects = sim.subjectsXml();
     expect(delayedSubjects).toContain('VisitStatus="Delayed"');
     expect(delayedSubjects).toContain('DelayedUntil="');
-    expect(sim.auditXml()).not.toContain('<AuditRecord');
+    expect(sim.auditXml()).not.toContain('<AuditRecord ');
 
     sim.tick(); // still within delay window, so skip processing
-    expect(sim.auditXml()).not.toContain('<AuditRecord');
+    expect(sim.auditXml()).not.toContain('<AuditRecord ');
 
     sim.tick(); // delay expired, resumes normal processing
     expect(sim.subjectsXml()).not.toContain('VisitStatus="Delayed"');
-    expect(sim.auditXml()).toContain('<AuditRecord');
+    expect(sim.auditXml()).toContain('<AuditRecord ');
 
     nowSpy.mockRestore();
     randomSpy.mockRestore();
@@ -242,6 +300,30 @@ describe('RwsSimulator', () => {
     expect(pagedAudit).not.toContain('ID="1"');
 
     randomSpy.mockRestore();
+  });
+
+  it('applies audit XML query overrides for StudyOID, Mode, Unicode, and FormOID', () => {
+    const sim = new RwsSimulator('Mediflex(Prod)', {
+      intervalMs: 0,
+      batchPercentage: 100,
+      speedFactor: 1.0,
+      sites: 1,
+      subjectsPerSite: 1,
+      logging: false,
+      visits: {
+        templates: [{ name: 'Visit', dayOffset: 0, forms: [{ oid: 'DM', name: 'Demographics' }, { oid: 'VS', name: 'Vitals' }] }],
+      },
+      audit: { fieldOids: ['DM.SEX', 'VS.HR'] },
+    });
+
+    sim.tick();
+    sim.tick();
+
+    const xml = sim.auditXml(5, 1, { studyOid: 'CustomStudy', unicode: 'Y', mode: 'Changes', formOid: 'VS' });
+    expect(xml).toContain('ClinicalData StudyOID="CustomStudy"');
+    expect(xml).toContain('<AuditRecords Mode="Changes" Unicode="Y" FormOID="VS">');
+    expect(xml).toContain('FieldOID="VS.HR"');
+    expect(xml).not.toContain('FieldOID="DM.SEX"');
   });
 
   it('applies enum, number, and string value rules', () => {

@@ -47,5 +47,17 @@
       "VS.HR": { "type": "number", "range": { "min": 55, "max": 110 } },
       "LB.WBC": { "type": "number", "range": { "min": 3, "max": 12 } }
     }
+  },
+  "service": {
+    "version": "Rave Web Services Version 1.0.0",
+    "build_version": "Build 2025.11.01",
+    "two_hundred_status": "200",
+    "two_hundred_message": "TwoHundred OK",
+    "studies": [
+      { "oid": "Mediflex(Prod)", "environment": "Prod" },
+      { "oid": "Mediflex_UAT", "environment": "UAT" }
+    ],
+    "cache_flush_response": "<Success/>",
+    "post_clinical_data_response": "<ODM><Success/></ODM>"
   }
 }

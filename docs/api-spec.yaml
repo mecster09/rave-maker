@@ -1,4 +1,4 @@
-api_name: "Medidata Rave Web Services (RWS)"
+﻿api_name: "Medidata Rave Web Services (RWS)"
 version: "2025.1.0"
 base_url: "https://{host}/RaveWebServices"
 auth:
@@ -6,21 +6,121 @@ auth:
   example_token: "Basic VEVTVF9VU0VSOlRFU1RfUEFTU1dPUkQ="  # Derived from TEST_USER:TEST_PASSWORD
 endpoints:
 
-  - path: "/studies/{study-oid}/datasets/metadata/regular"
+  - path: "/version"
     method: GET
-    summary: "1.5.1.1 Retrieve Clinical Datasets Metadata as ODM"
-    parameters:
-      - { name: "study-oid", in: path, type: string, required: true, example: "Mediflex(Prod)" }
-      - { name: "versionitem", in: query, type: string, required: false, example: "v1" }
-      - { name: "decodesuffix", in: query, type: string, required: false, example: "_DECODE" }
-      - { name: "codelistsuffix", in: query, type: string, required: false, example: "_CL" }
+    summary: "4.1 VersionRequest"
     responses:
       200:
         content_type: "application/xml"
         example: |
-          <ODM FileType="Snapshot" ODMVersion="1.3">
+          <Response>
+            <Version>Rave Web Services Version 1.0.0</Version>
+          </Response>
+
+  - path: "/version/build"
+    method: GET
+    summary: "4.2 BuildVersionRequest"
+    responses:
+      200:
+        content_type: "application/xml"
+        example: |
+          <Response>
+            <BuildVersion>Build 2025.11.01</BuildVersion>
+          </Response>
+
+  - path: "/twohundred"
+    method: GET
+    summary: "4.3 TwoHundredRequest"
+    responses:
+      200:
+        content_type: "application/xml"
+        example: |
+          <Response>
+            <Status>200</Status>
+            <Message>TwoHundred OK</Message>
+          </Response>
+
+  - path: "/webservice.aspx?CacheFlush"
+    method: GET
+    summary: "4.4 CacheFlushRequest"
+    responses:
+      200:
+        content_type: "application/xml"
+        example: |
+          <Success/>
+      401:
+        content_type: "application/xml"
+        example: |
+          <Response ReasonCode="RWS00008" ErrorClientResponseMessage="Unauthorized"/>
+
+  - path: "/studies"
+    method: GET
+    summary: "5.1.1 Retrieve Clinical Studies"
+    responses:
+      200:
+        content_type: "application/xml"
+        example: |
+          <ODM>
+            <Studies>
+              <Study OID="Mediflex" Environment="Prod"/>
+              <Study OID="Mediflex_UAT" Environment="UAT"/>
+            </Studies>
+          </ODM>
+      401:
+        content_type: "application/xml"
+        example: |
+          <Response ReasonCode="RWS00008" ErrorClientResponseMessage="Unauthorized"/>
+      403:
+        content_type: "application/xml"
+        example: |
+          <Response ReasonCode="RWS00009" ErrorClientResponseMessage="Forbidden"/>
+
+  - path: "/webservice.aspx?PostODMClinicalData"
+    method: POST
+    summary: "5.4 Post ODM Clinical Data"
+    request_body:
+      content_type: "application/xml"
+      example: |
+        <ODM xmlns="http://www.cdisc.org/ns/odm/v1.3">
+          <ClinicalData StudyOID="Mediflex">
+            <SubjectData SubjectKey="SUBJ001"/>
+          </ClinicalData>
+        </ODM>
+    responses:
+      200:
+        content_type: "application/xml"
+        example: |
+          <ODM>
+            <Success/>
+          </ODM>
+      400:
+        content_type: "application/xml"
+        example: |
+          <Response ReasonCode="RWS00020" ErrorClientResponseMessage="Invalid ODM format"/>
+      401:
+        content_type: "application/xml"
+        example: |
+          <Response ReasonCode="RWS00008" ErrorClientResponseMessage="Unauthorized"/>
+      403:
+        content_type: "application/xml"
+        example: |
+          <Response ReasonCode="RWS00009" ErrorClientResponseMessage="Forbidden"/>
+
+  - path: "/studies/{StudyOID}/datasets/metadata/regular"
+    method: GET
+    summary: "1.5.1.1 Retrieve Clinical Datasets Metadata as ODM"
+    parameters:
+      - { name: "StudyOID", in: path, type: string, required: true, example: "Mediflex(Prod)" }
+      - { name: "VersionItem", in: query, type: string, required: false, example: "Latest" }
+      - { name: "DecodeSuffix", in: query, type: string, required: false, example: "_DECODE" }
+      - { name: "CodeListSuffix", in: query, type: string, required: false, example: "_CL" }
+    responses:
+      200:
+        content_type: "application/xml"
+        example: |
+          <ODM xmlns="http://www.cdisc.org/ns/odm/v1.3" ODMVersion="1.3" FileType="Snapshot" CreationDateTime="2025-01-13T09:54:53Z" SourceSystem="Rave Mock">
             <Study OID="Mediflex(Prod)">
-              <MetaDataVersion OID="2025-01-13T09:54:53Z">
+              <MetaDataVersion OID="MDV.RAVE.01" Name="Production Metadata">
                 <FormDef OID="DM" Name="Demographics"/>
                 <ItemDef OID="DM.SEX" Name="Sex" DataType="text"/>
               </MetaDataVersion>
@@ -39,39 +139,46 @@ endpoints:
     method: GET
     summary: "1.5.3.4 Retrieve Clinical Data with the Clinical Audit Records Dataset"
     parameters:
-      - { name: "studyoid", in: query, type: string, required: true, example: "Mediflex(Prod)" }
-      - { name: "startid", in: query, type: integer, required: false, example: 1000 }
-      - { name: "per_page", in: query, type: integer, required: false, example: 500 }
-      - { name: "unicode", in: query, type: boolean, required: false, example: true }
-      - { name: "mode", in: query, type: string, required: false, example: "full" }
+      - { name: "StudyOID", in: query, type: string, required: true, example: "Mediflex(Prod)" }
+      - { name: "FormOID", in: query, type: string, required: false, example: "DM" }
+      - { name: "StartID", in: query, type: integer, required: false, example: 1000 }
+      - { name: "PerPage", in: query, type: integer, required: false, example: 500 }
+      - { name: "Unicode", in: query, type: string, required: false, example: "Y" }
+      - { name: "Mode", in: query, type: string, required: false, example: "Full" }
     responses:
       200:
         content_type: "application/xml"
         example: |
-          <ODM FileType="Snapshot" ODMVersion="1.3">
+          <ODM xmlns="http://www.cdisc.org/ns/odm/v1.3" ODMVersion="1.3" FileType="Snapshot" CreationDateTime="2025-10-18T14:21:03Z" SourceSystem="Rave Mock">
             <ClinicalData StudyOID="Mediflex(Prod)">
-              <AuditRecord ID="1001" User="raveuser" FieldOID="DM.SEX" OldValue="M" NewValue="F" DateTimeStamp="2025-10-18T14:21:03Z"/>
+              <AuditRecords>
+                <AuditRecord ID="1001" User="raveuser" FieldOID="DM.SEX" OldValue="M" NewValue="F" DateTimeStamp="2025-10-18T14:21:03Z"/>
+              </AuditRecords>
             </ClinicalData>
           </ODM>
+      401:
+        content_type: "application/xml"
+        example: |
+          <Response ReasonCode="RWS00008" ErrorClientResponseMessage="Unauthorized"/>
       404:
         content_type: "application/xml"
         example: |
           <Response ReasonCode="RWS00012" ErrorClientResponseMessage="Study OID not found"/>
 
-  - path: "/studies/{study-oid}/Subjects"
+  - path: "/studies/{StudyOID}/Subjects"
     method: GET
     summary: "1.5.9 Retrieve the List of Subjects in a Study"
     parameters:
-      - { name: "study-oid", in: path, type: string, required: true, example: "Mediflex(Prod)" }
+      - { name: "StudyOID", in: path, type: string, required: true, example: "Mediflex(Prod)" }
       - { name: "status", in: query, type: string, required: false, example: "all" }
       - { name: "include", in: query, type: string, required: false, example: "inactiveAndDeleted" }
     responses:
       200:
         content_type: "application/xml"
         example: |
-          <Subjects>
-            <Subject SubjectKey="1001" Status="Active" SiteNumber="001"/>
-            <Subject SubjectKey="1002" Status="Inactive" SiteNumber="002"/>
+          <Subjects StudyOID="Mediflex(Prod)">
+            <Subject SubjectKey="1001" SecondarySubjectID="SUBJ-1001" LocationOID="SITE001" SiteOID="SITE001" SiteNumber="001" SiteName="Main Site" Status="Active"/>
+            <Subject SubjectKey="1002" SecondarySubjectID="SUBJ-1002" LocationOID="SITE002" SiteOID="SITE002" SiteNumber="002" SiteName="Satellite Site" Status="Inactive"/>
           </Subjects>
       404:
         content_type: "application/xml"
@@ -84,6 +191,6 @@ endpoints:
 
 mapping:
   error_responses:
-    401: { message: "Unauthorized — invalid or missing credentials" }
-    404: { message: "Not found — study or dataset unavailable" }
-    500: { message: "Internal test error — mock server fault" }
+    401: { reason_code: "RWS00008", message: "Unauthorized" }
+    404: { reason_code: "RWS00012", message: "Not found" }
+    500: { reason_code: "RWS00100", message: "Internal test error" }
